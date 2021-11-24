@@ -1,0 +1,24 @@
+{
+    "name": "budget buddy",
+    "version": "0.1.0",
+    "description": "browser extension for budgeting © raymond wang",
+    "manifest_version": 2,
+    "content_scripts": [
+        {
+            "matches": [
+                "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"
+            ],
+            "run_at": "document_end",
+            "js": [
+                "index.js"
+            ]
+        }
+    ],
+    "browser_action": {},
+    "web_accessible_resources": [
+        "bb.css"
+    ],
+    "permissions": [
+        "storage"
+    ]
+}
