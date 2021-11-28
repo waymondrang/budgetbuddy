@@ -2,21 +2,39 @@ body {
   height: initial;
 }
 
-#mainContainer {
+#mainContainer,
+#Content {
   position: relative;
 }
 
+#bb-action-panel {
+  z-index: 999;
+}
+
 #bb-switch {
-  position: absolute;
-  right: 24px;
-  bottom: 24px;
-  border: 0.0625rem solid #3737371a;
-  border-radius: 8px;
-  font-size: 14px;
-  background-color: #212121;
-  color: #cecece;
-  padding: 8px 12px;
-  z-index: 2500000000;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
-  font-family: monospace;
+  margin: 0;
+}
+
+#bb-wip {
+  z-index: 99999;
+  background-color: #1b1b1be0;
+  color: #fefefe;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#bb-wip-title {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.bb-hidden {
+  display: none !important;
 }
