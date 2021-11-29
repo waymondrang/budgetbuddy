@@ -187,7 +187,6 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
                         var e_date = date_time.substr(0, date_time.indexOf("\ ")).split(/\//gm);
                         var e_time = date_time.substr(date_time.indexOf("\ ") + 1);
                         var t_date = new Date(e_date[2], e_date[0] - 1, e_date[1]);
-                        console.log(e_time);
                         t_date.setHours(e_time.replace(/[^a-zA-Z]/gm, "").toLowerCase() === "am" ? Number(e_time.substr(0, e_time.indexOf("\:"))) != 12 ? Number(e_time.substr(0, e_time.indexOf("\:"))) : 0 : Number(e_time.substr(0, e_time.indexOf("\:"))) != 12 ? Number(e_time.substr(0, e_time.indexOf("\:"))) + 12 : Number(e_time.substr(0, e_time.indexOf("\:"))));
                         t_date.setMinutes(Number((e_time.substr(e_time.indexOf("\:") + 1)).replace(/[^0-9]/gm, "")));
                         transaction_data["date"] = t_date.toISOString();
@@ -206,7 +205,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
             })
         }
 
-        // ! CODE MAY BREAK IF MORE THAN 10 PAGES
+        // ! CODE HOPEFULLY WILL NO LONGER BREAK IF MORE THAN 10 PAGES
 
         function get_current_page() {
             return Number(document.querySelector(".rgCurrentPage").innerText);
@@ -216,18 +215,27 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
             return Number(document.querySelector(".rgInfoPart").innerText.split(/\,/gm)[0].trim().replace(/[^0-9\s]/gm, '').trim().split(/\s/gm).at(-1));
         }
 
+        function find_node_with_inner_text(node_list, text) {
+            for (node of node_list) {
+                if (node.innerText === text) {
+                    return node
+                }
+            }
+        }
+
         await collect_data();
 
         nlog("finished initial collect_data");
 
         var page_links = t_bodies[0].querySelectorAll("a");
         var pages = get_pages();
+        nlog("pages", pages);
         var current_page;
 
-        if (t_bodies.length > 1) {
+        if (t_bodies.length > 1) { // IF MORE THAN ONE PAGE
             while ((current_page = get_current_page()) < pages) {
                 nlog("moving onto next page");
-                page_links[current_page].click();
+                find_node_with_inner_text(t_bodies[0].querySelectorAll("a"), `${current_page + 1}`).click();
 
                 // * CHECKPOINT
                 if (!running) {
