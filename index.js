@@ -221,6 +221,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
                     return node
                 }
             }
+            return null;
         }
 
         await collect_data();
@@ -242,9 +243,10 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
                     } catch (e) {
                         nlog("no more a elements with matching inner text");
                         try {
-                            page_links.querySelector("[title=\"More Pages\"]").click();
+                            t_bodies[0].querySelector("[title=\"Next Pages\"]").click();
                         } catch (e) {
-                            nlog("could not find element with selector [title=\"More Pages\"]");
+                            nlog("could not find element with selector [title=\"Next Pages\"]");
+                            nlog(e);
                             return;
                         }
                     }
