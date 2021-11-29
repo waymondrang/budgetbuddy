@@ -75,6 +75,14 @@ form_title.innerText = "Budget Buddy";
 
 // * FUNCTION DECLARATIONS
 
+function wait_for_timeout(timeout) {
+    return new Promise(function (resolve, reject) {
+        setTimeout(function () {
+            resolve();
+        }, timeout)
+    })
+}
+
 function wait_for_selector(selector, options = {}) {
     var hidden = Boolean(options["hidden"]);
     var timeout = options["timeout"] ? Number(options["timeout"]) : 30000;
@@ -179,9 +187,10 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
                         var e_date = date_time.substr(0, date_time.indexOf("\ ")).split(/\//gm);
                         var e_time = date_time.substr(date_time.indexOf("\ ") + 1);
                         var t_date = new Date(e_date[2], e_date[0] - 1, e_date[1]);
-                        t_date.setHours(e_time.replace(/[^a-zA-Z]/gm, "").toLowerCase() == "am" ? Number(e_time.substr(0, e_time.indexOf("\:"))) : Number(e_time.substr(0, e_time.indexOf("\:"))) + 12);
+                        console.log(e_time);
+                        t_date.setHours(e_time.replace(/[^a-zA-Z]/gm, "").toLowerCase() === "am" ? Number(e_time.substr(0, e_time.indexOf("\:"))) != 12 ? Number(e_time.substr(0, e_time.indexOf("\:"))) : 0 : Number(e_time.substr(0, e_time.indexOf("\:"))) != 12 ? Number(e_time.substr(0, e_time.indexOf("\:"))) + 12 : Number(e_time.substr(0, e_time.indexOf("\:"))));
                         t_date.setMinutes(Number((e_time.substr(e_time.indexOf("\:") + 1)).replace(/[^0-9]/gm, "")));
-                        transaction_data["date"] = t_date.toString();
+                        transaction_data["date"] = t_date.toISOString();
                         transaction_data["time"] = e_time;
                         transaction_data["account"] = transaction.querySelectorAll("td")[1].innerText;
                         transaction_data["location"] = transaction.querySelectorAll("td")[3].innerText;
