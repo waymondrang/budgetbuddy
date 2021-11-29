@@ -227,24 +227,40 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
 
         nlog("finished initial collect_data");
 
-        var page_links = t_bodies[0].querySelectorAll("a");
+        var page_links;
         var pages = get_pages();
         nlog("pages", pages);
         var current_page;
 
         if (t_bodies.length > 1) { // IF MORE THAN ONE PAGE
-            while ((current_page = get_current_page()) < pages) {
-                nlog("moving onto next page");
-                find_node_with_inner_text(t_bodies[0].querySelectorAll("a"), `${current_page + 1}`).click();
+            try {
+                while ((current_page = get_current_page()) < pages) {
+                    nlog("moving onto next page");
+                    page_links = t_bodies[0].querySelectorAll("a");
+                    try {
+                        find_node_with_inner_text(page_links, `${current_page + 1}`).click();
+                    } catch (e) {
+                        nlog("no more a elements with matching inner text");
+                        try {
+                            page_links.querySelector("[title=\"More Pages\"]").click();
+                        } catch (e) {
+                            nlog("could not find element with selector [title=\"More Pages\"]");
+                            return;
+                        }
+                    }
 
-                // * CHECKPOINT
-                if (!running) {
-                    nlog("user initiated stop")
-                    return;
+                    // * CHECKPOINT
+                    if (!running) {
+                        nlog("user initiated stop")
+                        return;
+                    }
+
+                    await wait_for_inner_text(".rgCurrentPage", `${current_page + 1}`);
+                    await collect_data();
                 }
-
-                await wait_for_inner_text(".rgCurrentPage", `${current_page + 1}`);
-                await collect_data();
+            } catch (e) {
+                nlog("an error occured");
+                nlog(e)
             }
         }
 
