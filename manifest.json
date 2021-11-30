@@ -1,6 +1,6 @@
 {
     "name": "budget buddy",
-    "version": "0.10.0",
+    "version": "0.12.0",
     "description": "browser extension for budgeting © raymond wang",
     "manifest_version": 2,
     "content_scripts": [
