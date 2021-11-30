@@ -158,7 +158,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         // * FORM VALIDATION
 
         document.querySelector("#ctl00_MainContent_BeginRadDateTimePicker_dateInput").value = '9/1/2021 12:00 AM';
-        document.querySelector("#ctl00_MainContent_EndRadDateTimePicker_dateInput").value = '6/10/2022 12:00 AM'; 0
+        document.querySelector("#ctl00_MainContent_EndRadDateTimePicker_dateInput").value = '6/10/2022 12:00 AM';
         document.querySelector("#ctl00_MainContent_AmountRangeFrom").value = '';
         document.querySelector("#ctl00_MainContent_AmountRangeTo").value = '';
         document.querySelector("#MainContent_Location").value = '';
@@ -205,7 +205,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
             })
         }
 
-        // ! CODE HOPEFULLY WILL NO LONGER BREAK IF MORE THAN 10 PAGES
+        // ! CODE WILL NOT BREAK IF MORE THAN 10 PAGES, BUT SERVERS WILL RATE LIMIT
 
         function get_current_page() {
             return Number(document.querySelector(".rgCurrentPage").innerText);
@@ -232,12 +232,40 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         var pages = get_pages();
         nlog("pages", pages);
         var current_page;
+        var refresh_interval = 5;
 
         if (t_bodies.length > 1) { // IF MORE THAN ONE PAGE
             try {
                 while ((current_page = get_current_page()) < pages) {
                     nlog("moving onto next page");
                     page_links = t_bodies[0].querySelectorAll("a");
+
+                    if (current_page % refresh_interval === 0) {
+                        document.querySelector("#MainContent_ClearButtonLink").click();
+                        await wait_for_selector("#MainContent_ContinueButton");
+
+                        document.querySelector("#ctl00_MainContent_BeginRadDateTimePicker_dateInput").value = '9/1/2021 12:00 AM';
+                        document.querySelector("#ctl00_MainContent_EndRadDateTimePicker_dateInput").value = '6/10/2022 12:00 AM';
+                        document.querySelector("#ctl00_MainContent_AmountRangeFrom").value = '';
+                        document.querySelector("#ctl00_MainContent_AmountRangeTo").value = '';
+                        document.querySelector("#MainContent_Location").value = '';
+                        document.querySelector("#MainContent_Accounts").value = document.querySelector("#MainContent_Accounts").querySelectorAll("option")[0].value;
+                        document.querySelector("#MainContent_TransactionType").value = document.querySelector("#MainContent_TransactionType").querySelectorAll("option")[0].value;
+                        document.querySelector("#MainContent_ContinueButton").click();
+
+                        await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+                        page_links = t_bodies[0].querySelectorAll("a");
+
+                        // ! THIS CODE IS UNTESTED AND MAY NOT WORK
+
+                        while (!find_node_with_inner_text(page_links, `${current_page + 1}`)) {
+                            t_bodies[0].querySelector("[title=\"Next Pages\"]").click();
+                            await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+                            nlog("waiting for timeout");
+                            await wait_for_timeout(3000);
+                        }
+                    }
+
                     try {
                         find_node_with_inner_text(page_links, `${current_page + 1}`).click();
                     } catch (e) {
@@ -272,7 +300,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
             return;
         }
 
-        chrome.storage.local.set({ data: data }, function () {
+        chrome.storage.local.set({ data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
             nlog("transaction history stored in local storage");
         })
 
