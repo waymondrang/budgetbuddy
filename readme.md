@@ -7,9 +7,9 @@ A browser extension that aims to help with budgeting and spending analysis for U
 ## Table of Contents <!-- omit in toc --> 
 - [How It Works](#how-it-works)
 - [Get Started](#get-started)
-    - [Installation](#installation)
-    - [Usage](#usage)
-    - [Analyze](#analyze)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Analyze](#analyze)
 
 ## How It Works
 
@@ -17,7 +17,7 @@ As a browser extension, Budget Buddy has exclusive access to view and change inf
 
 ## Get Started
 
-#### Installation
+### Installation
 
 To install Budget Buddy, either pull/clone the repository or download as .zip. If necessary, unzip the file, then navigate to the Chrome Extensions page at `chrome://extensions/`.
 
@@ -27,7 +27,7 @@ Select **Load Unpacked** and locate the file with the contents of Budget Buddy. 
 
 Congrats, you've installed Budget Buddy!
 
-#### Usage
+### Usage
 
 To start utilizing Budget Buddy, navigate to the [eAccounts Account Transactions page](https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx).
 
@@ -41,6 +41,6 @@ After the process finishes, two options will appear.
 
 - **Awesome** closes the overlay.
 
-#### Analyze
+### Analyze
 
 *This section is still in progress*
