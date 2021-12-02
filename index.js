@@ -172,13 +172,13 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         function collect_data() {
             return new Promise(async function (resolve, reject) {
 
-                // * CHECKPOINT
-                if (!running) {
-                    reject();
-                }
+                if (!running) { reject(); } // * CHECK IF PAUSED
 
                 try {
                     await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+
+                    if (!running) { reject(); } // * CHECK IF PAUSED
+
                     t_bodies = document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody");
                     var transactions = t_bodies[t_bodies.length - 1].querySelectorAll("tr");
                     for (transaction of transactions) {
@@ -237,9 +237,13 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         if (t_bodies.length > 1) { // IF MORE THAN ONE PAGE
             try {
                 while ((current_page = get_current_page()) < pages) {
+
+                    if (!running) { return } // * CHECK IF PAUSED
+
                     nlog("moving onto next page");
                     page_links = t_bodies[0].querySelectorAll("a");
 
+                    /*
                     if (current_page % refresh_interval === 0) {
                         document.querySelector("#MainContent_ClearButtonLink").click();
                         await wait_for_selector("#MainContent_ContinueButton");
@@ -265,6 +269,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
                             await wait_for_timeout(3000);
                         }
                     }
+                    */
 
                     try {
                         find_node_with_inner_text(page_links, `${current_page + 1}`).click();
