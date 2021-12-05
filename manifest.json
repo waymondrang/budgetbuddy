@@ -1,7 +1,7 @@
 {
     "name": "budget buddy",
-    "version": "0.12.0",
-    "description": "browser extension for budgeting © raymond wang",
+    "version": "0.14.0",
+    "description": "browser extension for budgeting ucsd financial accounts © raymond wang",
     "manifest_version": 2,
     "content_scripts": [
         {
@@ -22,5 +22,8 @@
     ],
     "background": {
         "service_worker": "background.js"
-    }
+    },
+    "icons": { "16": "bb16.png",
+        "48": "bb48.png",
+       "128": "bb128.png" }
 }

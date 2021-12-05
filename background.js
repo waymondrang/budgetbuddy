@@ -4,3 +4,7 @@ chrome.runtime.onMessage.addListener(function (request) {
         chrome.tabs.create({ 'url': chrome.runtime.getURL("./build/index.html") });
     }
 });
+
+chrome.browserAction.onClicked.addListener((tab) => {
+    chrome.tabs.create({ 'url': chrome.runtime.getURL("./build/index.html") });
+});
