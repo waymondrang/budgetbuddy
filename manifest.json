@@ -18,7 +18,8 @@
         "bb.css"
     ],
     "permissions": [
-        "storage", "tabs"
+        "storage",
+        "tabs"
     ],
     "background": {
         "service_worker": "background.js"
