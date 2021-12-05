@@ -1,18 +1,25 @@
-
-
-# Budget Buddy ![budget buddy version badge](https://img.shields.io/badge/dynamic/json?color=informational&label=version&query=%24.version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fmanifest.json) ![budget buddy manifest version](https://img.shields.io/badge/dynamic/json?color=informational&label=manifest%20version&query=%24.manifest_version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fmanifest.json) <!-- omit in toc --> 
+# Budget Buddy ![budget buddy version badge](https://img.shields.io/badge/dynamic/json?color=informational&label=version&query=%24.version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fmanifest.json) ![budget buddy manifest version](https://img.shields.io/badge/dynamic/json?color=informational&label=manifest%20version&query=%24.manifest_version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fmanifest.json) <!-- omit in toc -->
 
 A browser extension that aims to help with budgeting and spending analysis for UCSD Dining Dollars and Triton Cash.
 
-## Table of Contents <!-- omit in toc --> 
+## Table of Contents <!-- omit in toc -->
+
 - [How It Works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Analyze](#analyze)
 
+## Known Issues
+
+#### Request Limit on Transactions Page
+
+The eAccounts transactions page limits the number of requests that can be made per active session.
+
+There is no current solution to this issue, but a possible workaround would be to have Budget Buddy refresh the page before the requests are throttled and continue collection. A fix is being worked on.
+
 ## How It Works
 
-As a browser extension, Budget Buddy has exclusive access to view and change information on the [eAccounts Account Transactions page](https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx). Budget Buddy also has permission to store data locally in the browser and open new tabs. 
+As a browser extension, Budget Buddy has exclusive access to view and change information on the [eAccounts Account Transactions page](https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx). Budget Buddy also has permission to store data locally in the browser and open new tabs.
 
 ## Installation
 
@@ -28,7 +35,7 @@ Congrats, you've installed Budget Buddy!
 
 To start utilizing Budget Buddy, navigate to the [eAccounts Account Transactions page](https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx).
 
-Once the Account Transaction Report form appears, a separate box titled Budget Buddy will appear under the form. Select **Begin** to initiate the data collection process. 
+Once the Account Transaction Report form appears, a separate box titled Budget Buddy will appear under the form. Select **Begin** to initiate the data collection process.
 
 Collected transaction data is automatically saved at the end of the process
 
@@ -40,4 +47,4 @@ After the process finishes, two options will appear.
 
 ## Analyze
 
-*This section is still in progress*
+_This section is still in progress_
