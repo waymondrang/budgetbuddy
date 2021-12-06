@@ -209,7 +209,7 @@ async function main() {
             })
         }
 
-        // ! CODE WILL NOT BREAK IF MORE THAN 10 PAGES, BUT SERVERS WILL RATE LIMIT
+        // * WORKAROUND IMPLEMENTED FOR SERVER LIMIT
 
         function get_current_page() {
             return Number(document.querySelector(".rgCurrentPage").innerText);
@@ -280,15 +280,6 @@ async function main() {
                                 })
                             })
                         }()
-
-                        // ! THIS CODE IS UNTESTED AND MAY NOT WORK
-                        /* 
-                                                while (!find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`)) {
-                                                    document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelector("[title=\"Next Pages\"]").click();
-                                                    await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
-                                                    nlog("waiting for timeout");
-                                                    await wait_for_timeout(3000);
-                                                } */
                     }
 
                     try {
@@ -379,4 +370,4 @@ panel.insertBefore(toggle_analyze, panel.lastChild);
 main_container.insertBefore(panel, main_container.lastChild);
 document.body.insertBefore(work_in_progress, document.body.lastChild);
 
-nlog("ready to start budgeting");
+nlog("ready to start budgeting!");
