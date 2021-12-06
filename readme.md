@@ -5,7 +5,6 @@ A browser extension that aims to help with budgeting and spending analysis for U
 ## Table of Contents <!-- omit in toc -->
 
 - [Known Issues](#known-issues)
-    - [Request Limit on Transactions Page](#request-limit-on-transactions-page)
 - [How It Works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -13,11 +12,7 @@ A browser extension that aims to help with budgeting and spending analysis for U
 
 ## Known Issues
 
-#### Request Limit on Transactions Page
-
-The eAccounts transactions page limits the number of requests that can be made per active session.
-
-There is no current solution to this issue, but a possible workaround would be to have Budget Buddy refresh the page before the requests are throttled and continue collection. A fix is being worked on.
+Please refer to the [Issues section](https://github.com/waymondrang/budget-buddy/issues) regarding any issues/bugs with Budget Buddy.
 
 ## How It Works
 
