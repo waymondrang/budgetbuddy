@@ -4,6 +4,8 @@ A browser extension that aims to help with budgeting and spending analysis for U
 
 ## Table of Contents <!-- omit in toc -->
 
+- [Known Issues](#known-issues)
+    - [Request Limit on Transactions Page](#request-limit-on-transactions-page)
 - [How It Works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
