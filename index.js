@@ -341,8 +341,8 @@ if (bb_token_param) {
     nlog(bb_token_param);
     chrome.storage.local.get(["bb_token"], function (result) {
         if (Object.keys(result).includes("bb_token")) {
-            bb_token_data = result["bb_token"];
-            if (bb_token_data["bb_token"] === bb_token_param) {
+            if (result["bb_token"] ? result["bb_token"]["bb_token"] === bb_token_param : false) {
+                bb_token_data = result["bb_token"];
                 bb_token_valid = true;
                 main();
             } else {
