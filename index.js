@@ -1,4 +1,10 @@
 var log_history = [];
+const eaccounts_url = "https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx";
+
+const url_params = new URLSearchParams(window.location.search);
+const bb_token_param = url_params.get('bb_token');
+var bb_token_valid;
+var bb_token_data;
 
 var oglog = console.log;
 var nlog = function () {
@@ -141,13 +147,13 @@ function uuid_v4() {
     );
 }
 
-var toggle_button = document.createElement("input");
-toggle_button.value = "Begin";
-toggle_button.type = "button";
-toggle_button.classList.add(["button"])
-toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
-    e.preventDefault();
+async function main() {
+    // * BEGIN DATA COLLECTION
     nlog("budget buddy activated!");
+
+    if (bb_token_valid) {
+        nlog("resuming session", bb_token_param);
+    }
 
     running = true;
     toggle_button.disabled = true;
@@ -166,8 +172,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         document.querySelector("#MainContent_TransactionType").value = document.querySelector("#MainContent_TransactionType").querySelectorAll("option")[0].value;
         document.querySelector("#MainContent_ContinueButton").click();
 
-        var t_bodies;
-        var data = [];
+        var data = bb_token_data ? bb_token_data["data"] : [];
 
         function collect_data() {
             return new Promise(async function (resolve, reject) {
@@ -179,8 +184,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
 
                     if (!running) { reject(); } // * CHECK IF PAUSED
 
-                    t_bodies = document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody");
-                    var transactions = t_bodies[t_bodies.length - 1].querySelectorAll("tr");
+                    var transactions = document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody").length - 1].querySelectorAll("tr");
                     for (transaction of transactions) {
                         var transaction_data = {};
                         var date_time = transaction.querySelectorAll("td")[0].innerText;
@@ -215,6 +219,12 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
             return Number(document.querySelector(".rgInfoPart").innerText.split(/\,/gm)[0].trim().replace(/[^0-9\s]/gm, '').trim().split(/\s/gm).at(-1));
         }
 
+        /**
+         * Find node with specified innerText from a NodeList.
+         * @param {NodeList} node_list 
+         * @param {String} text 
+         * @returns {Node | null}
+         */
         function find_node_with_inner_text(node_list, text) {
             for (node of node_list) {
                 if (node.innerText === text) {
@@ -224,59 +234,69 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
             return null;
         }
 
+        var current_page = bb_token_valid ? bb_token_data["current_page"] : null;
+        var refresh_interval = 8;
+
+        if (bb_token_valid) {
+            nlog("navigating to last processed page", current_page, "target page", `${current_page + 1}`);
+            await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+            while (!find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`)) {
+                nlog("page link not found, navigating to more results");
+                document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelector("[title=\"Next Pages\"]").click();
+                await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+                nlog("waiting for timeout");
+                await wait_for_timeout(3000);
+            }
+            nlog(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"));
+            nlog("about to click on link with inner text", `${current_page + 1}`);
+            find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`).click();
+            await wait_for_inner_text(".rgCurrentPage", `${current_page + 1}`);
+
+            await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+        }
+
         await collect_data();
 
         nlog("finished initial collect_data");
 
-        var page_links;
-        var pages = get_pages();
-        nlog("pages", pages);
-        var current_page;
-        var refresh_interval = 5;
-
-        if (t_bodies.length > 1) { // IF MORE THAN ONE PAGE
+        if (document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody").length > 1) { // IF MORE THAN ONE PAGE
             try {
-                while ((current_page = get_current_page()) < pages) {
+                while ((current_page = get_current_page()) < get_pages()) {
 
-                    if (!running) { return } // * CHECK IF PAUSED
+                    // * CHECKPOINT
+                    if (!running) { nlog("user initiated stop"); return; }
 
                     nlog("moving onto next page");
-                    page_links = t_bodies[0].querySelectorAll("a");
 
-                    /*
                     if (current_page % refresh_interval === 0) {
-                        document.querySelector("#MainContent_ClearButtonLink").click();
-                        await wait_for_selector("#MainContent_ContinueButton");
-
-                        document.querySelector("#ctl00_MainContent_BeginRadDateTimePicker_dateInput").value = '9/1/2021 12:00 AM';
-                        document.querySelector("#ctl00_MainContent_EndRadDateTimePicker_dateInput").value = '6/10/2022 12:00 AM';
-                        document.querySelector("#ctl00_MainContent_AmountRangeFrom").value = '';
-                        document.querySelector("#ctl00_MainContent_AmountRangeTo").value = '';
-                        document.querySelector("#MainContent_Location").value = '';
-                        document.querySelector("#MainContent_Accounts").value = document.querySelector("#MainContent_Accounts").querySelectorAll("option")[0].value;
-                        document.querySelector("#MainContent_TransactionType").value = document.querySelector("#MainContent_TransactionType").querySelectorAll("option")[0].value;
-                        document.querySelector("#MainContent_ContinueButton").click();
-
-                        await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
-                        page_links = t_bodies[0].querySelectorAll("a");
+                        nlog("pausing collection to reload");
+                        var bb_token = uuid_v4();
+                        nlog(bb_token);
+                        var body = { "bb_token": bb_token, "data": data, "current_page": current_page };
+                        await function () {
+                            return new Promise(function (resolve, reject) {
+                                chrome.storage.local.set({ bb_token: body }, function () {
+                                    window.location.href = `${eaccounts_url}?bb_token=${bb_token}`;
+                                })
+                            })
+                        }()
 
                         // ! THIS CODE IS UNTESTED AND MAY NOT WORK
-
-                        while (!find_node_with_inner_text(page_links, `${current_page + 1}`)) {
-                            t_bodies[0].querySelector("[title=\"Next Pages\"]").click();
-                            await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
-                            nlog("waiting for timeout");
-                            await wait_for_timeout(3000);
-                        }
+                        /* 
+                                                while (!find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`)) {
+                                                    document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelector("[title=\"Next Pages\"]").click();
+                                                    await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+                                                    nlog("waiting for timeout");
+                                                    await wait_for_timeout(3000);
+                                                } */
                     }
-                    */
 
                     try {
-                        find_node_with_inner_text(page_links, `${current_page + 1}`).click();
+                        find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`).click();
                     } catch (e) {
                         nlog("no more a elements with matching inner text");
                         try {
-                            t_bodies[0].querySelector("[title=\"Next Pages\"]").click();
+                            document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelector("[title=\"Next Pages\"]").click();
                         } catch (e) {
                             nlog("could not find element with selector [title=\"Next Pages\"]");
                             nlog(e);
@@ -285,10 +305,7 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
                     }
 
                     // * CHECKPOINT
-                    if (!running) {
-                        nlog("user initiated stop")
-                        return;
-                    }
+                    if (!running) { nlog("user initiated stop"); return; }
 
                     await wait_for_inner_text(".rgCurrentPage", `${current_page + 1}`);
                     await collect_data();
@@ -300,12 +317,9 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         }
 
         // * CHECKPOINT
-        if (!running) {
-            nlog("user initiated stop")
-            return;
-        }
+        if (!running) { nlog("user initiated stop"); return; }
 
-        chrome.storage.local.set({ data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
+        chrome.storage.local.set({ bb_token: {}, data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
             nlog("transaction history stored in local storage");
         })
 
@@ -321,6 +335,30 @@ toggle_button.onclick = async function (e) { // * BEGIN DATA COLLECTION
         nlog("an error occurred!");
         nlog(e);
     }
+}
+
+if (bb_token_param) {
+    nlog(bb_token_param);
+    chrome.storage.local.get(["bb_token"], function (result) {
+        if (Object.keys(result).includes("bb_token")) {
+            bb_token_data = result["bb_token"];
+            if (bb_token_data["bb_token"] === bb_token_param) {
+                bb_token_valid = true;
+                main();
+            } else {
+                nlog("invalid bb_token")
+            }
+        }
+    })
+}
+
+var toggle_button = document.createElement("input");
+toggle_button.value = "Begin";
+toggle_button.type = "button";
+toggle_button.classList.add(["button"])
+toggle_button.onclick = async function (e) {
+    e.preventDefault();
+    await main();
 }
 
 var toggle_analyze = document.createElement("input");

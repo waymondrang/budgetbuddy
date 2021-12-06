@@ -6,7 +6,7 @@
     "content_scripts": [
         {
             "matches": [
-                "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"
+                "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx*"
             ],
             "js": [
                 "index.js"
