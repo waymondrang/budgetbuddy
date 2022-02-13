@@ -1,7 +1,9 @@
 {
     "project_name_short": "bb",
     "enforce_version_control": true,
-    "clean_manifest": false,
+    "clean_manifest": true,
+    "debug": false,
+    "release_directory": "./releases",
     "source": {
         "directory": "./src/chrome",
         "platform": "chrome"
@@ -24,6 +26,11 @@
             "patch": [
                 "background.js"
             ]
+        },
+        {
+            "directory": "./src/brandon_wong",
+            "platform": "brandon_wong",
+            "manifest_version": 2
         }
     ],
     "git_messages": {
