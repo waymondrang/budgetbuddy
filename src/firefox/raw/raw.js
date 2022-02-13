@@ -11,7 +11,7 @@ var alog = function () {
 
 var main_container = document.querySelector("#main");
 
-chrome.storage.local.get(['data'], function (result) {
+browser.storage.local.get(['data'], function (result) {
     var data = result["data"];
     if (!data) {
         alog("no data found!");

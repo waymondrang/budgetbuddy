@@ -15,6 +15,14 @@
                 "index.js",
                 "raw/raw.js"
             ]
+        },
+        {
+            "directory": "./src/opera",
+            "platform": "opera",
+            "manifest_version": 2,
+            "patch": [
+                "background.js"
+            ]
         }
     ]
 }
