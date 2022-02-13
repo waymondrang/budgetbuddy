@@ -1,7 +1,7 @@
 {
-    "name": "budget buddy",
+    "name": "BudgetBuddy",
     "version": "1.1.2",
-    "description": "browser extension for budgeting ucsd financial accounts © raymond wang",
+    "description": "",
     "manifest_version": 2,
     "content_scripts": [
         {
