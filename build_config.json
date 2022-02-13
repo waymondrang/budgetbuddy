@@ -26,11 +26,6 @@
             "patch": [
                 "background.js"
             ]
-        },
-        {
-            "directory": "./src/brandon_wong",
-            "platform": "brandon_wong",
-            "manifest_version": 2
         }
     ],
     "git_messages": {
