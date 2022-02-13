@@ -1,14 +1,17 @@
-# Budget Buddy ![budget buddy version badge](https://img.shields.io/badge/dynamic/json?color=informational&label=version&query=%24.version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fmanifest.json) ![budget buddy manifest version](https://img.shields.io/badge/dynamic/json?color=informational&label=manifest%20version&query=%24.manifest_version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fmanifest.json) <!-- omit in toc -->
+# Budget Buddy ![budget buddy version badge](https://img.shields.io/badge/dynamic/json?color=informational&label=version&query=%24.version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fsrc%2Fchrome%2Fmanifest.json)
+ 
+<!-- omit in toc -->
 
 A browser extension that aims to help with budgeting and spending analysis for UCSD Dining Dollars and Triton Cash.
 
 ## Table of Contents <!-- omit in toc -->
 
-- [Known Issues](#known-issues)
-- [How It Works](#how-it-works)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Analyze](#analyze)
+- [Budget Buddy !budget buddy version badge](#budget-buddy-)
+  - [Known Issues](#known-issues)
+  - [How It Works](#how-it-works)
+  - [Installation](#installation)
+  - [Usage](#usage)
+  - [Analyze](#analyze)
 
 ## Known Issues
 
