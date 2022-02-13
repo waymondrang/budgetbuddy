@@ -1,0 +1,20 @@
+{
+    "project_name_short": "bb",
+    "enforce_version_control": true,
+    "source": {
+        "directory": "./src/chrome",
+        "platform": "chrome"
+    },
+    "targets": [
+        {
+            "directory": "./src/firefox",
+            "platform": "firefox",
+            "manifest_version": 2,
+            "patch": [
+                "background.js",
+                "index.js",
+                "raw/raw.js"
+            ]
+        }
+    ]
+}

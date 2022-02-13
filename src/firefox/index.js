@@ -21,7 +21,7 @@ const head = document.head || document.getElementsByTagName("head")[0] || docume
 const main_container = document.querySelector("#mainContainer").querySelector("#Content");
 
 const css = document.createElement('link');
-css.setAttribute("href", chrome.extension.getURL('bb.css'));
+css.setAttribute("href", browser.extension.getURL('bb.css'));
 css.id = "bb-css";
 css.rel = "stylesheet";
 
@@ -57,7 +57,7 @@ wip_analyze.type = "button";
 wip_analyze.classList.add("button", "bb-hidden");
 wip_analyze.onclick = function (e) {
     e.preventDefault();
-    chrome.runtime.sendMessage("analyze");
+    browser.runtime.sendMessage("analyze");
 }
 
 work_in_progress.insertBefore(wip_stop, work_in_progress.lastChild);
@@ -275,7 +275,7 @@ async function main() {
                         var body = { "bb_token": bb_token, "data": data, "current_page": current_page };
                         await function () {
                             return new Promise(function (resolve, reject) {
-                                chrome.storage.local.set({ bb_token: body }, function () {
+                                browser.storage.local.set({ bb_token: body }, function () {
                                     window.location.href = `${eaccounts_url}?bb_token=${bb_token}`;
                                 })
                             })
@@ -310,7 +310,7 @@ async function main() {
         // * CHECKPOINT
         if (!running) { nlog("user initiated stop"); return; }
 
-        chrome.storage.local.set({ bb_token: {}, data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
+        browser.storage.local.set({ bb_token: {}, data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
             nlog("transaction history stored in local storage");
         })
 
@@ -330,7 +330,7 @@ async function main() {
 
 if (bb_token_param) {
     nlog(bb_token_param);
-    chrome.storage.local.get(["bb_token"], function (result) {
+    browser.storage.local.get(["bb_token"], function (result) {
         if (Object.keys(result).includes("bb_token")) {
             if (result["bb_token"] ? result["bb_token"]["bb_token"] === bb_token_param : false) {
                 bb_token_data = result["bb_token"];
@@ -358,7 +358,7 @@ toggle_analyze.type = "button";
 toggle_analyze.classList.add(["button"])
 toggle_analyze.onclick = function (e) {
     e.preventDefault();
-    chrome.runtime.sendMessage("analyze");
+    browser.runtime.sendMessage("analyze");
 }
 
 head.insertBefore(css, head.lastChild);

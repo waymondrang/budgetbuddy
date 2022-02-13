@@ -5,65 +5,84 @@
 const start_time = new Date();
 const fs = require('fs-extra');
 const { exec } = require("child_process");
-const project_name = "bb";
 
-// ! Confirm these files before building
-var firefox_excluded_files = ["manifest.json", "index.js", "background.js", "raw/raw.js"];
-var opera_excluded_files = ["manifest.json"];
+const config = require("./build_config.json");
+const source_manifest = JSON.parse(fs.readFileSync(config.source.directory + "/manifest.json").toString());
+const force_mode = (process.argv.includes("--ignore") || process.argv.includes("--force"));
+const will_package = process.argv.includes("--all") || process.argv.includes("--package");
+const will_copy = process.argv.includes("--copy") || process.argv.includes("--all");
+const version_exists = fs.existsSync(`./releases/${config.project_name_short}_v${source_manifest["version"]}_${config.source.platform}.zip`);
 
-var exclusive_files = ["background.js", "raw/raw.js"];
+var targets = config.targets;
 
-const force_mode = process.argv.includes("--ignore") || process.argv.includes("--force");
+//* manifest updates should happen here
 
-const chrome_manifest = JSON.parse(fs.readFileSync("./src/chrome/manifest.json").toString());
+for (var target of targets) {
+    if (!fs.existsSync(target.directory + "/manifest.json")) {
+        fs.writeFileSync(target.directory + "/manifest.json", JSON.stringify({ manifest_version: target.manifest_version }, null, 2));
+    };
+    target.manifest = JSON.parse(fs.readFileSync(target.directory + "/manifest.json").toString());
+}
 
-var opera_manifest = JSON.parse(fs.readFileSync("./src/opera/manifest.json").toString());
+/**  */
 
-var firefox_manifest = JSON.parse(fs.readFileSync("./src/firefox/manifest.json").toString());
-
-const version_exists = fs.existsSync(`./releases/${project_name}_v${chrome_manifest["version"]}_chrome.zip`);
-
-// TODO: Run checks against each version, and if needed, perform directory sync for behind directory
-
-if ((process.argv.includes("--all") || process.argv.includes("--package")) && version_exists && !force_mode) {
+if (config["enforce_version_control"] && will_package && version_exists && !force_mode) {
     console.log("\x1b[33m%s\x1b[0m", "packaged version already exists!");
     process.exit(9);
 }
 
-if ((process.argv.includes("--all") || process.argv.includes("--package")) && chrome_manifest["version"] === firefox_manifest["version"] && !force_mode) {
-    console.log("\x1b[33m%s\x1b[0m", "chrome manifest version not updated!");
+if (config["enforce_version_control"] && will_package && targets.map(e => e.manifest.version).includes(source_manifest.version) && !force_mode) {
+    console.log("\x1b[33m%s\x1b[0m", "source manifest version not updated!");
     process.exit(9);
 }
 
-if (process.argv.includes("--copy") || process.argv.includes("--all")) {
+if (will_copy) {
+    const src_files = fs.readdirSync(config.source.directory);
 
-    const src_files = fs.readdirSync("./src/chrome");
-
-    for (file of src_files) {
-        if (!opera_excluded_files.includes(file)) {
-            fs.copySync("./src/chrome/" + file, "./src/opera/" + file);
+    for (var target of targets) {
+        for (var file of src_files) {
+            if (file.includes("manifest.json")) {
+                continue;
+            }
+            if (!target.patch.includes(file)) {
+                fs.copySync(config.source.directory + "/" + file, target.directory + "/" + file);
+            } else {
+                var source_file = fs.readFileSync(config.source.directory + "/" + file, { encoding: "utf-8" }).toString();
+                var target_file;
+                if (config.source.platform == "chrome") {
+                    if (source_manifest.manifest_version == 3 && target.manifest_version == 2) {
+                        console.log("parsing manifest v3 to manifest v2 for file " + file);
+                        target_file = source_file
+                            .replace(/chrome\.action/gm, "browser.browserAction")
+                            .replace(/chrome\./gm, "browser\.");
+                    } else if (source_manifest.manifest_version == 2 && target.manifest_version == 3) {
+                        console.log("bump manifest version not yet supported");
+                        process.exit(1);
+                    } else {
+                        console.log("manifest is equal, skipping parsing for file " + file);
+                        target_file = source_file;
+                    }
+                } else {
+                    console.log("platform not yet supported for directory sync");
+                    process.exit(1);
+                }
+                fs.writeFileSync(target.directory + "/" + file, target_file);
+            }
         }
-        if (!firefox_excluded_files.includes(file)) {
-            fs.copySync("./src/chrome/" + file, "./src/firefox/" + file);
-        }
-    }
-
-    for (file of exclusive_files) {
-        var chrome_js = fs.readFileSync("./src/chrome/" + file, { encoding: "utf-8" }).toString();
-        var firefox_js = chrome_js.replace(/chrome/gm, "browser");
-        fs.writeFileSync("./src/firefox/" + file, firefox_js);
     }
 
     console.log("finished copying " + src_files.length + " files from chrome into firefox & opera directories");
 
+    process.exit(0);
+
     var excluded_fields = ["manifest_version"];
 
-    for (field in chrome_manifest) {
+    for (field in source_manifest) {
         if (excluded_fields.includes(field)) {
             continue;
         }
         if (field === "web_accessible_resources") {
-            var resources = chrome_manifest[field][0]["resources"];
+            var resources = source_manifest[field][0]["resources"];
             var new_resources = []
             for (resource of resources) {
                 new_resources.push(resource);
@@ -72,14 +91,14 @@ if (process.argv.includes("--copy") || process.argv.includes("--all")) {
             continue;
         }
         if (field == "action") {
-            var actions = chrome_manifest[field];
+            var actions = source_manifest[field];
             firefox_manifest["browser_action"] = {};
             for (action in actions) {
-                firefox_manifest["browser_action"][action] = chrome_manifest[field][action];
+                firefox_manifest["browser_action"][action] = source_manifest[field][action];
             }
             continue;
         }
-        firefox_manifest[field] = chrome_manifest[field];
+        firefox_manifest[field] = source_manifest[field];
     }
 
     fs.writeFileSync("./src/firefox/manifest.json", JSON.stringify(firefox_manifest, null, 2));
@@ -101,14 +120,14 @@ function end_message() {
 
 if (process.argv.includes("--package") || process.argv.includes("--all")) {
     console.log("creating zip files");
-    var package_shell = exec(`package.sh \"v${chrome_manifest["version"]}\"`);
+    var package_shell = exec(`package.sh \"v${source_manifest["version"]}\"`);
     package_shell.on("exit", function () {
-        console.log(`release ${chrome_manifest["version"]} created for chrome, firefox, and opera`);
+        console.log(`release ${source_manifest["version"]} created for chrome, firefox, and opera`);
         if (process.argv.includes("--git") || process.argv.includes("--all")) {
             console.log("committing and pushing changes");
-            var package_shell = exec(`git.sh \"version v${chrome_manifest["version"]}\"`);
+            var package_shell = exec(`git.sh \"version v${source_manifest["version"]}\"`);
             package_shell.on("exit", function () {
-                console.log(`committed and pushed ${chrome_manifest["version"]} to github`);
+                console.log(`committed and pushed ${source_manifest["version"]} to github`);
                 end_message();
             })
         } else {
