@@ -7,46 +7,79 @@ const fs = require('fs-extra');
 const { exec } = require("child_process");
 
 const config = require("./build_config.json");
-const { exit } = require('process');
-const source_manifest = JSON.parse(fs.readFileSync(config.source.directory + "/manifest.json").toString());
-const force_mode = (process.argv.includes("--ignore") || process.argv.includes("--force"));
+const source_manifest = JSON.parse(fs.readFileSync(config.source.directory + "/" + "manifest.json").toString());
+const force_mode = process.argv.includes("--ignore") || process.argv.includes("--force");
 const will_package = process.argv.includes("--all") || process.argv.includes("--package");
 const will_copy = process.argv.includes("--copy") || process.argv.includes("--all");
+const will_git = process.argv.includes("--git") || process.argv.includes("--all");
 const version_exists = fs.existsSync(`./releases/${config.project_name_short}_v${source_manifest["version"]}_${config.source.platform}.zip`);
 const browser_platforms = ["firefox"];
 const chrome_platforms = ["chrome", "opera", "edge"];
+const manifest_ignore = ["manifest_version"];
 
 var targets = config.targets;
 
 var ogl = console.log;
 var log = function () {
     a = [];
-    a.push(`[${new Date().toLocaleTimeString()}] \t`);
+    a.push(`[${new Date().toLocaleTimeString()}][info] \t`);
     for (var i = 0; i < arguments.length; i++) {
         a.push(arguments[i]);
     }
+    ogl.apply(console, a);
+};
+var warn = function () {
+    a = [];
+    a.push(`[${new Date().toLocaleTimeString()}][warn] \t`);
+    a.push(...arguments);
     ogl.apply(console, a);
 };
 
 //* manifest updates should happen here
 
 for (var target of targets) {
-    if (!fs.existsSync(target.directory + "/manifest.json")) {
-        fs.writeFileSync(target.directory + "/manifest.json", JSON.stringify({ manifest_version: target.manifest_version }, null, 2));
-    };
-    target.manifest = JSON.parse(fs.readFileSync(target.directory + "/manifest.json").toString());
+    // if (!fs.existsSync(target.directory + "/manifest.json")) {
+    //     fs.writeFileSync(target.directory + "/manifest.json", JSON.stringify({ manifest_version: target.manifest_version }, null, 2));
+    // };
+    target.manifest = { manifest_version: target.manifest_version };
+    for (field in source_manifest) {
+        if (manifest_ignore.includes(field)) {
+            continue;
+        }
+        if (!source_manifest[field] ||
+            Array.isArray(source_manifest[field]) ? !source_manifest[field].length : false ||
+                typeof source_manifest[field] === 'object' ? !Object.keys(source_manifest[field]).length : false) {
+            warn(field + " field is empty");
+            if (config.clean_manifest) continue;
+        }
+        if (source_manifest.manifest_version == 3 && target.manifest_version == 2) {
+            if (field == "web_accessible_resources") {
+                target.manifest[field] = source_manifest[field][0].resources;
+                continue;
+            }
+            if (field == "action") {
+                target.manifest.browser_action = source_manifest.action;
+                continue;
+            }
+        }
+        target.manifest[field] = source_manifest[field];
+    }
+    fs.writeFileSync(target.directory + "/manifest.json", JSON.stringify(target.manifest, null, 2));
+    // target.manifest = JSON.parse(fs.readFileSync(target.directory + "/manifest.json").toString());
 }
+
+log("updated " + targets.map(e => e.platform).join(" ") + " manifests using " + config.source.platform + " manifest");
 
 /**  */
 
-if (config["enforce_version_control"] && will_package && version_exists && !force_mode) {
-    log("\x1b[33m%s\x1b[0m", "packaged version already exists!");
-    process.exit(9);
+if (version_exists) {
+    warn("\x1b[33m%s\x1b[0m", "packaged version already exists!");
+    if (config["enforce_version_control"] && will_package && !force_mode) process.exit(99);
 }
 
-if (config["enforce_version_control"] && will_package && targets.map(e => e.manifest.version).includes(source_manifest.version) && !force_mode) {
-    log("\x1b[33m%s\x1b[0m", "source manifest version not updated!");
-    process.exit(9);
+if (targets.map(e => e.manifest.version).includes(source_manifest.version)) {
+    warn("\x1b[33m%s\x1b[0m", "source manifest version not updated!");
+    if (config["enforce_version_control"] && will_package && !force_mode) process.exit(99);
 }
 
 if (will_copy) {
@@ -95,72 +128,36 @@ if (will_copy) {
             }
         }
     }
-
-    log("finished copying " + src_files.length + " files from chrome into firefox & opera directories");
-
-    process.exit(0);
-
-    var excluded_fields = ["manifest_version"];
-
-    for (field in source_manifest) {
-        if (excluded_fields.includes(field)) {
-            continue;
-        }
-        if (field === "web_accessible_resources") {
-            var resources = source_manifest[field][0]["resources"];
-            var new_resources = []
-            for (resource of resources) {
-                new_resources.push(resource);
-            }
-            firefox_manifest[field] = new_resources;
-            continue;
-        }
-        if (field == "action") {
-            var actions = source_manifest[field];
-            firefox_manifest["browser_action"] = {};
-            for (action in actions) {
-                firefox_manifest["browser_action"][action] = source_manifest[field][action];
-            }
-            continue;
-        }
-        firefox_manifest[field] = source_manifest[field];
-    }
-
-    fs.writeFileSync("./src/firefox/manifest.json", JSON.stringify(firefox_manifest, null, 2));
-    fs.writeFileSync("./src/opera/manifest.json", JSON.stringify(firefox_manifest, null, 2));
-
-    console.log("updated firefox & opera manifests using chrome manifest");
-
-    if (process.argv.includes("--git") || process.argv.includes("--all")) {
-        console.log("pushing synced directories to github");
-        var package_shell = exec(`git.sh \"platform directory sync\"`);
+    log("finished copying " + src_files.length + " files from " + config.source.platform + " into " + targets.map(e => e.platform).join(" ") + " directories");
+    if (will_git) {
+        log("pushing synced directories to github");
+        var package_shell = exec(`git.sh \"${config.git_messages.directory_sync}\"`);
     }
 } else {
-    console.log("skipped copying");
+    log("skipped copying files");
 }
 
-function end_message() {
-    console.log("\x1b[36m%s\x1b[0m", "process finished in " + ((new Date() - start_time) / 1000) + " seconds");
-}
+process.on("exit", function (code) {
+    log("\x1b[36m" + "process finished in " + ((new Date() - start_time) / 1000) + " seconds with exit code " + code + "\x1b[0m");
+})
 
-if (process.argv.includes("--package") || process.argv.includes("--all")) {
-    console.log("creating zip files");
+if (will_package) {
+    log(`packaging ${source_manifest["version"]} for ` + targets.map(e => e.platform).join(", ") + " & " + config.source.platform);
     var package_shell = exec(`package.sh \"v${source_manifest["version"]}\"`);
     package_shell.on("exit", function () {
-        console.log(`release ${source_manifest["version"]} created for chrome, firefox, and opera`);
-        if (process.argv.includes("--git") || process.argv.includes("--all")) {
-            console.log("committing and pushing changes");
+        log(`packaged ${source_manifest["version"]} for ` + targets.map(e => e.platform).join(", ") + " & " + config.source.platform);
+        if (will_git) {
+            log("committing and pushing changes to github");
             var package_shell = exec(`git.sh \"version v${source_manifest["version"]}\"`);
             package_shell.on("exit", function () {
-                console.log(`committed and pushed ${source_manifest["version"]} to github`);
-                end_message();
-            })
+                log(`committed and pushed ${source_manifest["version"]} to github`);
+            });
         } else {
-            console.log("skipping push to github");
-            end_message();
+            log("skipping pushing to github");
         }
     })
 } else {
-    console.log("skipping zip files");
-    end_message();
+    log("skipping zipping files");
 }
+
+process.exit(0);

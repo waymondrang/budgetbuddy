@@ -1,6 +1,7 @@
 {
     "project_name_short": "bb",
     "enforce_version_control": true,
+    "clean_manifest": false,
     "source": {
         "directory": "./src/chrome",
         "platform": "chrome"
@@ -24,5 +25,8 @@
                 "background.js"
             ]
         }
-    ]
+    ],
+    "git_messages": {
+        "directory_sync": "automated directory sync"
+    }
 }
