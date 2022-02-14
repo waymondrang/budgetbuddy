@@ -1,7 +1,3 @@
-/** 
- * TODO: Check manifest version of Chrome manifest and handle each version accordingly
- */
-
 var ogl = console.log;
 var log = function () {
     a = [];
@@ -195,18 +191,6 @@ if (will_package) {
         execSync(`package.sh \"v${source_manifest.version}\" \"${config.project_name_short}\" \"${package.platform}\" \"${package.directory}\" \"${config.release_directory}\"`);
         log(`packaged ${source_manifest.version} for ` + package.platform);
     }
-    // package_shell.on("exit", function () {
-    //     log(`packaged ${source_manifest.version} for ` + targets.map(e => e.platform).join(", ") + " & " + config.source.platform);
-    //     if (will_git) {
-    //         log("committing and pushing changes to github");
-    //         var package_shell = exec(`git.sh \"version v${source_manifest.version}\"`);
-    //         package_shell.on("exit", function () {
-    //             log(`committed and pushed ${source_manifest.version} to github`);
-    //         });
-    //     } else {
-    //         log("skipping pushing to github");
-    //     }
-    // })
 } else {
     log("skipping zipping files");
 }

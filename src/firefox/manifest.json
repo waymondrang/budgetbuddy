@@ -13,6 +13,7 @@
       ]
     }
   ],
+  "browser_action": {},
   "web_accessible_resources": [
     "bb.css"
   ],

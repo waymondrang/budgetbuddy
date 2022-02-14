@@ -1,7 +1,7 @@
 {
     "project_name_short": "bb",
     "enforce_version_control": true,
-    "clean_manifest": true,
+    "clean_manifest": false,
     "debug": false,
     "release_directory": "./releases",
     "source": {
