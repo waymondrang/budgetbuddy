@@ -216,10 +216,6 @@ async function main() {
                         /** EXPERIMENTAL CODE TO REDUCE CHECKING ENTIRE HISTORY */
                         if (current_page == 1 && bb_current_data && object_equals(bb_current_data[match_index], transaction_data)) {
                             match_index++;
-                            if (match_index == 1) {
-                                data.push(transaction_data);
-                                continue;
-                            }
                             if (match_index >= matches_threshold) {
                                 bb_matched_data = true;
                                 nlog("match index threshold reached");
@@ -404,7 +400,10 @@ toggle_analyze.onclick = function (e) {
 }
 
 chrome.storage.local.get(["data"], function (result) {
-    bb_current_data = result.data;
+    var data = result.data;
+    bb_current_data = data.sort(function (a, b) {
+        Date.parse(b["date"]) - Date.parse(a["date"])
+    });
 });
 
 head.insertBefore(css, head.lastChild);
