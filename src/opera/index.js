@@ -5,6 +5,10 @@ const url_params = new URLSearchParams(window.location.search);
 const bb_token_param = url_params.get('bb_token');
 var bb_token_valid;
 var bb_token_data;
+var bb_current_data;
+var bb_matched_data;
+
+const matches_threshold = 5;
 
 var oglog = console.log;
 var nlog = function () {
@@ -21,7 +25,7 @@ const head = document.head || document.getElementsByTagName("head")[0] || docume
 const main_container = document.querySelector("#mainContainer").querySelector("#Content");
 
 const css = document.createElement('link');
-css.setAttribute("href", chrome.extension.getURL('bb.css'));
+css.setAttribute("href", chrome.runtime.getURL('bb.css'));
 css.id = "bb-css";
 css.rel = "stylesheet";
 
@@ -87,6 +91,14 @@ function wait_for_timeout(timeout) {
             resolve();
         }, timeout)
     })
+}
+
+function object_equals(x, y) {
+    try {
+        return Object.keys(x).map(e => x.e == y.e).every(e => e == true);
+    } catch {
+        return false;
+    }
 }
 
 function wait_for_selector(selector, options = {}) {
@@ -176,16 +188,16 @@ async function main() {
 
         function collect_data() {
             return new Promise(async function (resolve, reject) {
-
                 if (!running) { reject(); } // * CHECK IF PAUSED
-
+                var match_index = 0;
                 try {
                     await wait_for_selector("#MainContent_LoadingPanelAction", { hidden: true });
+                    var current_page = get_current_page();
 
                     if (!running) { reject(); } // * CHECK IF PAUSED
-
                     var transactions = document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody").length - 1].querySelectorAll("tr");
                     for (transaction of transactions) {
+                        if (!running) { break; } // * CHECK IF PAUSED
                         var transaction_data = {};
                         var date_time = transaction.querySelectorAll("td")[0].innerText;
                         var e_date = date_time.substr(0, date_time.indexOf("\ ")).split(/\//gm);
@@ -200,6 +212,24 @@ async function main() {
                         transaction_data["type"] = transaction.querySelectorAll("td")[4].innerText;
                         transaction_data["amount"] = Number((transaction.querySelectorAll("td")[5].innerText).replace(/[^0-9\.]/gm, ""));
                         transaction_data["id"] = uuid_v4();
+                        // console.log(match_index, bb_current_data[match_index], transaction_data, data);
+                        /** EXPERIMENTAL CODE TO REDUCE CHECKING ENTIRE HISTORY */
+                        if (current_page == 1 && bb_current_data && object_equals(bb_current_data[match_index], transaction_data)) {
+                            match_index++;
+                            if (match_index == 1) {
+                                data.push(transaction_data);
+                                continue;
+                            }
+                            if (match_index >= matches_threshold) {
+                                bb_matched_data = true;
+                                nlog("match index threshold reached");
+                                if (data.length) {
+                                    bb_current_data.push(...data);
+                                }
+                                break;
+                            }
+                            continue;
+                        }
                         data.push(transaction_data);
                     }
                     resolve();
@@ -234,6 +264,14 @@ async function main() {
             return null;
         }
 
+        function end() {
+            nlog("data collection complete!");
+            running = false;
+            wip_title.innerText = "Data Collection Complete!";
+            wip_analyze.classList.remove(["bb-hidden"]);
+            wip_stop.value = "Awesome";
+        }
+
         var current_page = bb_token_valid ? bb_token_data["current_page"] : null;
         var refresh_interval = 8;
 
@@ -256,6 +294,14 @@ async function main() {
         }
 
         await collect_data();
+
+        if (bb_matched_data) {
+            console.log("returned matched data, exiting main process");
+            console.log(bb_current_data);
+            chrome.storage.local.set({ bb_token: {}, data: bb_current_data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) });
+            end();
+            return;
+        }
 
         nlog("finished initial collect_data");
 
@@ -314,11 +360,7 @@ async function main() {
             nlog("transaction history stored in local storage");
         })
 
-        nlog("data collection complete!");
-        running = false;
-        wip_title.innerText = "Data Collection Complete!";
-        wip_analyze.classList.remove(["bb-hidden"]);
-        wip_stop.value = "Awesome";
+        end();
 
     } catch (e) {
         running = false;
@@ -360,6 +402,10 @@ toggle_analyze.onclick = function (e) {
     e.preventDefault();
     chrome.runtime.sendMessage("analyze");
 }
+
+chrome.storage.local.get(["data"], function (result) {
+    bb_current_data = result.data;
+});
 
 head.insertBefore(css, head.lastChild);
 panel.insertBefore(toggle_button, panel.lastChild);
