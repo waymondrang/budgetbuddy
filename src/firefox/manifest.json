@@ -23,7 +23,9 @@
     "tabs"
   ],
   "background": {
-    "service_worker": "background.js"
+    "scripts": [
+      "background.js"
+    ]
   },
   "icons": {
     "16": "bb16.png",
