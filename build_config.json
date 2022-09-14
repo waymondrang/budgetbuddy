@@ -1,0 +1,48 @@
+{
+    "project_name_short": "bb",
+    "enforce_version_control": true,
+    "clean_manifest": false,
+    "default_actions": [
+        "copy"
+    ],
+    "release_directory": "./releases",
+    "source": {
+        "directory": "./src/chrome",
+        "platform": "chrome"
+    },
+    "targets": [
+        {
+            "directory": "./src/firefox",
+            "platform": "firefox",
+            "manifest_version": 2,
+            "patch": [
+                "index.js",
+                "background.js",
+                "raw/raw.js",
+                "build/static/js/787.67d51d53.chunk.js",
+                "build/static/js/787.67d51d53.chunk.js.map",
+                "build/static/js/main.532b4e4f.js",
+                "build/static/js/main.532b4e4f.js.map"
+            ]
+        },
+        {
+            "directory": "./src/opera",
+            "platform": "opera",
+            "manifest_version": 3,
+            "patch": [
+                "index.js",
+                "background.js",
+                "raw/raw.js",
+                "build/static/js/787.67d51d53.chunk.js",
+                "build/static/js/787.67d51d53.chunk.js.map",
+                "build/static/js/main.532b4e4f.js",
+                "build/static/js/main.532b4e4f.js.map"
+            ]
+        }
+    ],
+    "git_messages": {
+        "directory_sync": "automated directory sync",
+        "packages": "automated package build"
+    },
+    "debug": false
+}

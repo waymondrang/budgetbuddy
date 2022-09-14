@@ -1,8 +1,9 @@
 {
-  "manifest_version": 2,
+  "manifest_version": 3,
   "name": "BudgetBuddy",
-  "version": "0.2.0",
-  "description": "Analysis tool for UCSD financial accounts",
+  "author": "Raymond Wang",
+  "version": "1.0.0",
+  "description": "Transaction analyzer for UCSD HDH Accounts",
   "content_scripts": [
     {
       "matches": [
@@ -13,9 +14,16 @@
       ]
     }
   ],
-  "browser_action": {},
+  "action": {},
   "web_accessible_resources": [
-    "bb.css"
+    {
+      "resources": [
+        "bb.css"
+      ],
+      "matches": [
+        "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx*"
+      ]
+    }
   ],
   "permissions": [
     "storage",

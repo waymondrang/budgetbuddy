@@ -1,8 +1,6 @@
 import './App.css';
 import React from 'react';
 
-// TODO: MAKE THE TABLE ITS OWN COMPONENT
-
 export default class App extends React.Component {
   constructor(props) {
     super(props)
@@ -21,34 +19,18 @@ export default class App extends React.Component {
       data: [],
       filtered_data: [],
       dining_dollars: -1,
-      holidays: [
-        {
-          "holiday": "winter_break",
-          "start": new Date(2021, 12 - 1, 19, 0, 0, 0, 0),
-          "end": new Date(2022, 1 - 1, 1, 0, 0, 0, 0),
-        },
-        {
-          "holiday": "mlk_jr_day",
-          "start": new Date(2021, 1 - 1, 18, 0, 0, 0, 0),
-          "end": new Date(2022, 1 - 1, 18, 0, 0, 0, 0),
-        },
-        {
-          "holiday": "presidents_day",
-          "start": new Date(2021, 2 - 1, 15, 0, 0, 0, 0),
-          "end": new Date(2022, 2 - 1, 15, 0, 0, 0, 0),
-        },
-        {
-          "holiday": "cesar_chavez_day",
-          "start": new Date(2021, 3 - 1, 26, 0, 0, 0, 0),
-          "end": new Date(2022, 3 - 1, 26, 0, 0, 0, 0),
-        }
-      ],
+      triton_cash: -1,
+      triton2go: -1,
+      start_date: new Date(2022, 9 - 1, 19, 0, 0, 0, 0),
+      end_date: new Date(2023, 6 - 1, 16 + 1, 0, 0, 0, 0), // School year end date (June 16th + 1, 2023 00:00:00)
+      modal: false,
     }
 
     this.sortBy = this.sortBy.bind(this);
     this.onLocationFilterChange = this.onLocationFilterChange.bind(this);
     this.applyFilter = this.applyFilter.bind(this);
     this.spentDateDining = this.spentDateDining.bind(this);
+    this.toggleModal = this.toggleModal.bind(this);
   }
 
   async componentDidMount() {
@@ -78,25 +60,19 @@ export default class App extends React.Component {
         filtered_data: data,
         last_update: last_update,
         locations: locations.sort(function (a, b) { return a.localeCompare(b) }),
-        dining_dollars: data.filter(e => e["type"].toLowerCase() === "credit" && e["account"].toLowerCase() === "dining dollars").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"].toLowerCase() === "debit" && e["account"].toLowerCase() === "dining dollars").reduce((a, b) => +(a + b["amount"]).toFixed(2), 0)
+        dining_dollars: +(data.filter(e => e["type"] === "Credit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0)).toFixed(2)
       })
       return
     }
+
+    // Fetch and process data from local storage
     try {
       window.chrome.storage.local.get(['data', 'last_update'], async function (result) {
         var data = result["data"];
         var last_update = result["last_update"]
-        var version = window.chrome.runtime.getManifest().version;
         if (!data) {
           console.log("no data found!");
           return;
-        }
-        var newest_version;
-        try {
-          var newest_mainfest = await fetch("https://raw.githubusercontent.com/waymondrang/budget-buddy/main/manifest.json").then(result => result.json())
-          newest_version = newest_mainfest["version"];
-        } catch (e) {
-          console.log(e)
         }
         var locations = [];
         for (var transaction of data) {
@@ -106,23 +82,41 @@ export default class App extends React.Component {
         }
         self.setState({
           data: data,
-          version: version,
-          newest_version: newest_version,
-          outdated_version: (newest_version && version) ? (+((version).replace(/[^0-9]/gm, "")) < +((newest_version).replace(/[^0-9]/gm, "")) ? 1 : +((version).replace(/[^0-9]/gm, "")) === +((newest_version).replace(/[^0-9]/gm, "")) ? 2 : 3) : 0,
           filtered_data: data,
           last_update: last_update,
           locations: locations.sort(function (a, b) { return a.localeCompare(b) }),
-          dining_dollars: data.filter(e => e["type"].toLowerCase() === "credit" && e["account"].toLowerCase() === "dining dollars").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"].toLowerCase() === "debit" && e["account"].toLowerCase() === "dining dollars").reduce((a, b) => +(a + b["amount"]).toFixed(2), 0)
+          dining_dollars: +(data.filter(e => e["type"] === "Credit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0)).toFixed(2),
+          triton_cash: +(data.filter(e => e["type"] === "Credit" && e["account"] === "Triton Cash").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && e["account"] === "Triton Cash").reduce((a, b) => a + b["amount"], 0)).toFixed(2),
+          triton2go: +(data.filter(e => e["type"] === "Credit" && e["account"] === "Triton2Go Dining Dollars").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && e["account"] === "Triton2Go Dining Dollars").reduce((a, b) => a + b["amount"], 0)).toFixed(2)
         })
       })
     } catch (e) {
+      console.log("The below error, if regarding reading 'local', is expected and can be ignored in development mode.")
+      console.log(e);
+    }
+
+    // Fetch and compare latest version
+    try {
+      let version = window.chrome.runtime.getManifest().version;
+      let newest_mainfest = await fetch("https://raw.githubusercontent.com/waymondrang/budgetbuddy/main/src/chrome/manifest.json").then(result => result.json());
+      let newest_version = newest_mainfest["version"];
+      self.setState({
+        version: version,
+        outdated_version: (newest_version && version) ? (+((version).replace(/[^0-9]/gm, "")) < +((newest_version).replace(/[^0-9]/gm, "")) ? 1 : +((version).replace(/[^0-9]/gm, "")) === +((newest_version).replace(/[^0-9]/gm, "")) ? 2 : 3) : 0,
+      })
+    } catch (e) {
+      self.setState({
+        outdated_version: 0,
+      });
+      console.log("The below error, if regarding reading 'getManifest', is expected and can be ignored in development mode.");
       console.log(e);
     }
   }
 
   sortBy(e, method) {
-    var primary_param = this.state.primary_param;
-    var data = this.state.filtered_data;
+    let primary_param = this.state.primary_param;
+    let data = this.state.filtered_data;
+    let sorted_data;
     if (e.shiftKey) {
       console.log("ctrl click registered to method", method, "condition", method === this.state.primary_param);
       if (method === this.state.primary_param) {
@@ -138,78 +132,59 @@ export default class App extends React.Component {
       }
     }
     if (method === "amount") {
-      var sorted = data.sort(function (a, b) {
+      sorted_data = data.sort(function (a, b) {
         if (primary_param === "time") {
           var date_a = new Date(Date.parse(a["date"]));
           var date_b = new Date(Date.parse(b["date"]));
         }
         return primary_param === "date" ? Date.parse(b["date"]) - Date.parse(a["date"]) || b["amount"] - a["amount"] : primary_param === "time" ? ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) || b["amount"] - a["amount"] : primary_param === "account" ? a["account"].localeCompare(b["account"]) || b["amount"] - a["amount"] : primary_param === "location" ? a["location"].localeCompare(b["location"]) || b["amount"] - a["amount"] : primary_param === "type" ? a["type"].localeCompare(b["type"]) || b["amount"] - a["amount"] : b["amount"] - a["amount"];
       })
-      this.setState({
-        filtered_data: sorted,
-        method: method
-      })
     } else if (method === "date") {
-      var sorted = data.sort(function (a, b) {
+      sorted_data = data.sort(function (a, b) {
         if (primary_param === "time") {
           var date_a = new Date(Date.parse(a["date"]));
           var date_b = new Date(Date.parse(b["date"]));
         }
         return primary_param === "amount" ? b["amount"] - a["amount"] || Date.parse(b["date"]) - Date.parse(a["date"]) : primary_param === "time" ? ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) || Date.parse(b["date"]) - Date.parse(a["date"]) : primary_param === "account" ? a["account"].localeCompare(b["account"]) || Date.parse(b["date"]) - Date.parse(a["date"]) : primary_param === "location" ? a["location"].localeCompare(b["location"]) || Date.parse(b["date"]) - Date.parse(a["date"]) : primary_param === "type" ? a["type"].localeCompare(b["type"]) || Date.parse(b["date"]) - Date.parse(a["date"]) : Date.parse(b["date"]) - Date.parse(a["date"]);
       })
-      this.setState({
-        filtered_data: sorted,
-        method: method
-      })
     } else if (method === "time") {
-      var sorted = data.sort(function (a, b) {
+      sorted_data = data.sort(function (a, b) {
         var date_a = new Date(Date.parse(a["date"]));
         var date_b = new Date(Date.parse(b["date"]));
         return primary_param === "amount" ? b["amount"] - a["amount"] || ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) : primary_param === "date" ? Date.parse(b["date"]) - Date.parse(a["date"]) || ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) : primary_param === "account" ? a["account"].localeCompare(b["account"]) || ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) : primary_param === "location" ? a["location"].localeCompare(b["location"]) || ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) : primary_param === "type" ? a["type"].localeCompare(b["type"]) || ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) : ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24));
 
       });
-      this.setState({
-        filtered_data: sorted,
-        method: method
-      })
     } else if (method === "account") {
-      var sorted = data.sort(function (a, b) {
+      sorted_data = data.sort(function (a, b) {
         if (primary_param === "time") {
           var date_a = new Date(Date.parse(a["date"]));
           var date_b = new Date(Date.parse(b["date"]));
         }
         return primary_param === "amount" ? b["amount"] - a["amount"] || a["account"].localeCompare(b["account"]) : primary_param === "time" ? ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) || a["account"].localeCompare(b["account"]) : primary_param === "date" ? Date.parse(b["date"]) - Date.parse(a["date"]) || a["account"].localeCompare(b["account"]) : primary_param === "location" ? a["location"].localeCompare(b["location"]) || a["account"].localeCompare(b["account"]) : primary_param === "type" ? a["type"].localeCompare(b["type"]) || a["account"].localeCompare(b["account"]) : a["account"].localeCompare(b["account"]);
       })
-      this.setState({
-        filtered_data: sorted,
-        method: method
-      })
     } else if (method === "location") {
-      var sorted = data.sort(function (a, b) {
+      sorted_data = data.sort(function (a, b) {
         if (primary_param === "time") {
           var date_a = new Date(Date.parse(a["date"]));
           var date_b = new Date(Date.parse(b["date"]));
         }
         return primary_param === "amount" ? b["amount"] - a["amount"] || a["location"].localeCompare(b["location"]) : primary_param === "time" ? ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) || a["location"].localeCompare(b["location"]) : primary_param === "date" ? Date.parse(b["date"]) - Date.parse(a["date"]) || a["account"].localeCompare(b["account"]) : primary_param === "account" ? a["account"].localeCompare(b["account"]) || a["location"].localeCompare(b["location"]) : primary_param === "type" ? a["type"].localeCompare(b["type"]) || a["location"].localeCompare(b["location"]) : a["location"].localeCompare(b["location"]);
       })
-      this.setState({
-        filtered_data: sorted,
-        method: method
-      })
     }
     else if (method === "type") {
-      var sorted = data.sort(function (a, b) {
+      sorted_data = data.sort(function (a, b) {
         if (primary_param === "time") {
           var date_a = new Date(Date.parse(a["date"]));
           var date_b = new Date(Date.parse(b["date"]));
         }
         return primary_param === "amount" ? b["amount"] - a["amount"] || a["type"].localeCompare(b["type"]) : primary_param === "time" ? ((date_a - (date_a.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) - ((date_b - (date_b.getTimezoneOffset() * 60 * 1000)) % (1000 * 60 * 60 * 24)) || a["type"].localeCompare(b["type"]) : primary_param === "date" ? Date.parse(b["date"]) - Date.parse(a["date"]) || a["type"].localeCompare(b["type"]) : primary_param === "location" ? a["location"].localeCompare(b["location"]) || a["type"].localeCompare(b["type"]) : primary_param === "account" ? a["account"].localeCompare(b["account"]) || a["type"].localeCompare(b["type"]) : a["type"].localeCompare(b["type"]);
       })
-      this.setState({
-        filtered_data: sorted,
-        method: method
-      })
-    }
+    } else
+      return;
+    this.setState({
+      filtered_data: sorted_data,
+      method: method
+    })
     console.log("primary parameter", primary_param);
   }
 
@@ -229,11 +204,9 @@ export default class App extends React.Component {
         filter: filter
       })
     }
-    // this.setState({
-    //   filter: filter
-    // })
   }
 
+  // Unused
   applyFilter(e) {
     console.log("applying filter", this.state.filter);
     if (this.state.filter["location"]) {
@@ -253,15 +226,13 @@ export default class App extends React.Component {
   daysLeft() {
     var currentDay = new Date();
     currentDay.setHours(0, 0, 0, 0);
-    var finalDay = new Date(2022, 6 - 1, 10 + 1, 0, 0, 0, 0); // ? school year end date (june 10, 2022)
-    return Math.round(Math.abs(finalDay - currentDay) / (1000 * 60 * 60 * 24));
+    return Math.round((this.state.end_date - currentDay) / (1000 * 60 * 60 * 24));
   }
 
   daysPast() {
     var currentDay = new Date();
     currentDay.setHours(0, 0, 0, 0);
-    var startDay = new Date(2021, 9 - 1, 20, 0, 0, 0, 0);
-    return Math.round(Math.abs(startDay - currentDay) / (1000 * 60 * 60 * 24));
+    return Math.round((currentDay - this.state.start_date) / (1000 * 60 * 60 * 24));
   }
 
   spentDateDining(start_date, end_date) {
@@ -272,16 +243,30 @@ export default class App extends React.Component {
     startCurrentDay.setHours(0, 0, 0, 0);
     var endCurrentDay = new Date(end_date);
     endCurrentDay.setHours(23, 59, 59, 999);
-    return +(this.state.data.filter(e => e["type"].toLowerCase() === "debit" && e["account"].toLowerCase() === "dining dollars" && new Date(e["date"]).valueOf() > startCurrentDay.valueOf() && new Date(e["date"]).valueOf() < endCurrentDay.valueOf()).reduce((a, b) => a + b["amount"], 0)).toFixed(2);
+    return +(this.state.data.filter(e => e["type"] === "Debit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover") && new Date(e["date"]).valueOf() > startCurrentDay.valueOf() && new Date(e["date"]).valueOf() < endCurrentDay.valueOf()).reduce((a, b) => a + b["amount"], 0)).toFixed(2);
+  }
+
+  toggleModal() {
+    this.setState({
+      modal: !this.state.modal
+    })
   }
 
   render() {
-    var data = this.state.filtered_data;
     return (
       <div id="main">
-        <section>
-          <h1 id="title">Budget Buddy Analyzer{this.state.debug ? " Debug Mode" : null} v{this.state.version}</h1>
-          <p>Shift + Click on a header field to set it as the primary sort parameter. {this.state.outdated_version === -1 ? "Checking for latest version." : this.state.outdated_version === 1 ? `A newer version (v${this.state.newest_version}) is available!` : this.state.outdated_version === 2 ? "You are running the latest version!" : this.state.outdated_version === 3 ? "You are running a preview build!" : "Unable to check for updates."}</p>
+        {this.state.modal ?
+          <div id="modal">
+            <div id="modal-background" onClick={this.toggleModal} />
+            <div id="modal-content">
+              <p className='extension-name'>Budget Buddy Extension and Web App</p>
+              <p className='extension-author'>Created by <a href='https://waymondrang.com'>Raymond Wang</a></p>
+            </div>
+          </div> : null
+        }
+        <section id="analyzer">
+          <h1 id="title">Budget Buddy Analyzer</h1>
+          <p>Shift + Click on a header field to set it as the primary sort parameter.</p>
           <div className="options">
             <select className="option" value={this.state.filter["location"]} onChange={this.onLocationFilterChange}>
               <option key="bb_default" value="" disabled>Select Location</option>
@@ -290,7 +275,6 @@ export default class App extends React.Component {
                 <option key={e} value={e}>{e}</option>
               )}
             </select>
-            <button className="option" onClick={this.applyFilter}>Filter</button>
           </div>
           <div className="table_container">
             <table>
@@ -330,23 +314,23 @@ export default class App extends React.Component {
               <tbody>
                 <tr>
                   <td></td>
-                  <td>${data.filter(e => e["type"].toLowerCase() === "credit" && e["account"] === "Dining Dollars").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"].toLowerCase() === "debit" && e["account"] === "Dining Dollars").reduce((a, b) => +(a + b["amount"]).toFixed(2), 0)}</td>
-                  <td>${data.filter(e => e["type"].toLowerCase() === "credit" && e["account"] === "Triton Cash").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"].toLowerCase() === "debit" && e["account"] === "Triton Cash").reduce((a, b) => +(a + b["amount"]).toFixed(2), 0)}</td>
-                  <td>${data.filter(e => e["type"].toLowerCase() === "credit" && e["account"] === "Triton2Go Dining Dollars").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"].toLowerCase() === "debit" && e["account"] === "Triton2Go Dining Dollars").reduce((a, b) => +(a + b["amount"]).toFixed(2), 0)}</td>
+                  <td>${this.state.dining_dollars}</td>
+                  <td>${this.state.triton_cash}</td>
+                  <td>${this.state.triton2go}</td>
                 </tr>
               </tbody>
             </table>
           </div>
-          <div className="footer">
-            <div className='footer_container'>
-              <p>Last Update: {this.state.last_update}</p>
-              <a className='update_button' href="https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"><button>Update Data</button></a>
+          <footer>
+            <div id="update">
+              <p>Data Updated: {this.state.last_update}</p>
+              <a className='update_button' href="https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"><button>Update</button></a>
             </div>
-            <p>{this.state.filtered_data.length} {this.state.filtered_data.length !== 1 ? "Transactions" : "Transaction"}</p>
-          </div>
+            <p id="transactions">{this.state.filtered_data.length} {this.state.filtered_data.length !== 1 ? "Transactions" : "Transaction"}</p>
+          </footer>
         </section>
         <hr />
-        <section>
+        {/* <section>
           <h1>Dining Dollars</h1>
           <div className="info_card_container">
             <div className="info_card">
@@ -358,7 +342,7 @@ export default class App extends React.Component {
             <div className="info_card">
               <div className="info_card_content">
                 <p className="info_title">Spent</p>
-                <span className="info_body">${this.spentDateDining(new Date(2021, 9 - 1), new Date())}</span>
+                <span className="info_body">${this.spentDateDining(this.state.start_date, new Date())}</span>
               </div>
             </div>
             <div className="info_card">
@@ -382,7 +366,7 @@ export default class App extends React.Component {
             <div className="info_card">
               <div className="info_card_content">
                 <p className="info_title">Spent/Day</p>
-                <span className="info_body">${+(this.spentDateDining(new Date(2021, 9 - 1), new Date()) / this.daysPast()).toFixed(2)}</span>
+                <span className="info_body">${+(this.spentDateDining(this.state.start_date, new Date()) / this.daysPast()).toFixed(2)}</span>
               </div>
             </div>
             <div className="info_card">
@@ -398,6 +382,13 @@ export default class App extends React.Component {
               </div>
             </div>
           </div>
+        </section> 
+        <hr /> */}
+        <section id='extra'>
+          <p>{this.state.debug ? " Debug Mode" : null} {this.state.version ? "v" + this.state.version : null} {this.state.outdated_version === -1 ? "Checking for latest version." : this.state.outdated_version === 1 ? `A newer version (v${this.state.newest_version}) is available!` : this.state.outdated_version === 2 ? "You are running the latest version!" : this.state.outdated_version === 3 ? "You are running a preview build!" : "Unable to check for updates."}</p>
+          <button className="icon_button" id='about' onClick={this.toggleModal}>
+            <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox='0 0 48 48'><path d="M24.15 34q.65 0 1.075-.425.425-.425.425-1.075v-9.05q0-.6-.45-1.025Q24.75 22 24.15 22q-.65 0-1.075.425-.425.425-.425 1.075v9.05q0 .6.45 1.025.45.425 1.05.425ZM24 18.3q.7 0 1.175-.45.475-.45.475-1.15t-.475-1.2Q24.7 15 24 15q-.7 0-1.175.5-.475.5-.475 1.2t.475 1.15q.475.45 1.175.45ZM24 44q-4.25 0-7.9-1.525-3.65-1.525-6.35-4.225-2.7-2.7-4.225-6.35Q4 28.25 4 24q0-4.2 1.525-7.85Q7.05 12.5 9.75 9.8q2.7-2.7 6.35-4.25Q19.75 4 24 4q4.2 0 7.85 1.55Q35.5 7.1 38.2 9.8q2.7 2.7 4.25 6.35Q44 19.8 44 24q0 4.25-1.55 7.9-1.55 3.65-4.25 6.35-2.7 2.7-6.35 4.225Q28.2 44 24 44Zm0-20Zm0 17q7 0 12-5t5-12q0-7-5-12T24 7q-7 0-12 5T7 24q0 7 5 12t12 5Z" /></svg>
+          </button>
         </section>
       </div>
     )

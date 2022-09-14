@@ -1,32 +1,40 @@
 {
-    "manifest_version": 2,
-    "name": "BudgetBuddy",
-    "version": "0.2.0",
-    "description": "Analysis tool for UCSD financial accounts",
-    "content_scripts": [
-      {
-        "matches": [
-          "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx*"
-        ],
-        "js": [
-          "index.js"
-        ]
-      }
-    ],
-    "browser_action": {},
-    "web_accessible_resources": [
-      "bb.css"
-    ],
-    "permissions": [
-      "storage",
-      "tabs"
-    ],
-    "background": {
-      "service_worker": "background.js"
-    },
-    "icons": {
-      "16": "bb16.png",
-      "48": "bb48.png",
-      "128": "bb128.png"
+  "manifest_version": 3,
+  "name": "BudgetBuddy",
+  "author": "Raymond Wang",
+  "version": "1.0.0",
+  "description": "Transaction analyzer for UCSD HDH Accounts",
+  "content_scripts": [
+    {
+      "matches": [
+        "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx*"
+      ],
+      "js": [
+        "index.js"
+      ]
     }
+  ],
+  "action": {},
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "bb.css"
+      ],
+      "matches": [
+        "*://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx*"
+      ]
+    }
+  ],
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "bb16.png",
+    "48": "bb48.png",
+    "128": "bb128.png"
   }
+}
