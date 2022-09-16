@@ -1,6 +1,6 @@
 # Budget Buddy ![budget buddy version badge](https://img.shields.io/badge/dynamic/json?color=informational&label=version&query=%24.version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fsrc%2Fchrome%2Fmanifest.json) <!-- omit in toc -->
 
-A browser extension that aims to help with budgeting and spending analysis for UCSD Dining Dollars and Triton Cash.
+A browser extension that helps analyze transactions for UCSD HDH Accounts
 
 ## Table of Contents <!-- omit in toc -->
 
