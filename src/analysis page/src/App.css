@@ -150,7 +150,7 @@ select {
   font-size: inherit;
   height: 36px;
   flex: 1;
-  width: fit-content;
+  width: 100%;
 }
 
 button {
@@ -325,5 +325,5 @@ footer p {
 .extension-author {
   font-size: 1em;
   margin: 0;
-  margin-bottom: 0.5em;
+  margin-bottom: 1.5em;
 }
