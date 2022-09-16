@@ -6,35 +6,11 @@ const start_processing_client = `{"enabled":true,"emptyMessage":"","validationTe
 const end_processing_date = "12/30/2099 12:00 AM";
 const end_processing_client = `{"enabled":true,"emptyMessage":"","validationText":"2010-01-01-00-00-00","valueAsString":"2010-01-01-00-00-00","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"1/1/2010 12:00 AM"}`;
 
-const head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
-const main_container = document.querySelector("#mainContainer").querySelector("#Content");
-
 var bb_token_valid;
 var bb_token_data;
-var bb_current_data;
+var bb_current_data = JSON.parse(document.currentScript.getAttribute("data"));
 var bb_matched_data;
 var running;
-
-// Custom BudgetBuddy Logger
-var og_log = console.log;
-var log = function () {
-    a = [];
-    a.push('[bb][index.js]\t');
-    for (var i = 0; i < arguments.length; i++) {
-        a.push(arguments[i]);
-    }
-    og_log.apply(console, a);
-};
-
-const css = document.createElement('link');
-css.setAttribute("href", browser.runtime.getURL('bb.css'));
-css.id = "bb-css";
-css.rel = "stylesheet";
-
-const js = document.createElement('script');
-js.setAttribute("src", browser.runtime.getURL('m4in.js'));
-js.id = "bb-js";
-js.type = "text/javascript";
 
 // Insertions
 
@@ -68,28 +44,13 @@ wip_analyze.type = "button";
 wip_analyze.classList.add("button", "bb-hidden");
 wip_analyze.onclick = function (e) {
     e.preventDefault();
-    browser.runtime.sendMessage("analyze");
+    chrome.runtime.sendMessage("analyze");
 }
 
 work_in_progress.insertBefore(wip_stop, work_in_progress.lastChild);
 work_in_progress.insertBefore(wip_title, work_in_progress.lastChild);
 work_in_progress.insertBefore(wip_analyze, work_in_progress.lastChild);
 document.body.insertBefore(work_in_progress, document.body.lastChild);
-
-var panel = document.createElement("div");
-panel.id = "bb-action-panel";
-panel.classList.add("formPanel");
-
-var form_container = document.createElement("div");
-form_container.classList.add(["formContainer"]);
-
-var form_instructions = document.createElement("div");
-form_instructions.classList.add(["formInstructions"]);
-form_instructions.innerHTML = "Transaction analyzer for UCSD HDH Accounts.";
-
-var form_title = document.createElement("h1");
-form_title.classList.add(["formIntroText"]);
-form_title.innerText = "Budget Buddy";
 
 // Functions
 
@@ -252,8 +213,7 @@ function find_node_with_inner_text(node_list, text) {
     return null;
 }
 
-// window.m4in = async function () {
-async function main() {
+window.m4in = async function () {
     log("Budget Buddy Initiated");
 
     if (bb_token_valid)
@@ -370,7 +330,7 @@ async function main() {
         if (bb_matched_data) {
             log("Found repeated data, concatenating old data");
             var new_data = data.concat(bb_current_data);
-            browser.storage.local.set({ bb_token: {}, data: new_data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) });
+            chrome.storage.local.set({ bb_token: {}, data: new_data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) });
             end();
             return;
         }
@@ -393,7 +353,7 @@ async function main() {
                         log("Refreshing page");
                         await (function () { // Stall process and wait for token to be set
                             return new Promise(function (resolve, reject) {
-                                browser.storage.local.set({ bb_token: body }, function () {
+                                chrome.storage.local.set({ bb_token: body }, function () {
                                     window.location.href = `${eaccounts_url}?bb_token=${bb_token}`;
                                 })
                             })
@@ -401,7 +361,7 @@ async function main() {
                     }
 
                     try {
-                        document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00 tbody a.rgCurrentPage + a").click();
+                        find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`).dispatchEvent(new PointerEvent("click", { bubbles: true, cancelable: true, pointerId: 1, width: 1, height: 1, pressure: 0.5, pointerType: "mouse", isPrimary: true }));
                     } catch (e) {
                         log("No more <a> elements with matching innerText");
                         try {
@@ -436,7 +396,7 @@ async function main() {
 
         if (!running) { log("User-initiated stop"); return; }
 
-        browser.storage.local.set({ bb_token: {}, data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
+        chrome.storage.local.set({ bb_token: {}, data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
             log("Transaction history saved to local storage");
         })
 
@@ -449,64 +409,3 @@ async function main() {
         log(e);
     }
 }
-
-if (bb_token_param) {
-    log(bb_token_param);
-    browser.storage.local.get(["bb_token"], function (result) {
-        if (Object.keys(result).includes("bb_token")) {
-            if (result["bb_token"] ? result["bb_token"]["bb_token"] === bb_token_param : false) {
-                bb_token_data = result["bb_token"];
-                bb_token_valid = true;
-                main();
-            } else {
-                log("Invalid bb_token")
-            }
-        }
-    })
-}
-
-var toggle_button = document.createElement("input");
-toggle_button.value = "Start";
-toggle_button.type = "button";
-toggle_button.style.marginRight = "1em";
-toggle_button.classList.add(["button"]);
-toggle_button.onclick = function () {
-    browser.storage.local.get(["data"], function (result) {
-        if (Object.keys(result).includes("data")) {
-            bb_current_data = result["data"];
-        }
-        main();
-    });
-};
-
-// toggle_button.setAttribute("onclick", "(" + async function () {
-//     this.disabled = true;
-//     await window.m4in();
-// } + ")()");
-
-var toggle_analyze = document.createElement("input");
-toggle_analyze.value = "Launch Analyzer";
-toggle_analyze.type = "button";
-toggle_analyze.classList.add(["button"])
-toggle_analyze.onclick = function (e) {
-    e.preventDefault();
-    browser.runtime.sendMessage("analyze");
-}
-
-// browser.storage.local.get(["data"], async function (result) {
-//     if (Object.keys(result).includes("data")) {
-//         js.setAttribute("data", JSON.stringify(result["data"]));
-//     }
-//     head.insertBefore(js, head.lastChild);
-// });
-
-// head.insertBefore(js, head.lastChild);
-head.insertBefore(css, head.lastChild);
-panel.insertBefore(toggle_button, panel.lastChild);
-panel.insertBefore(form_title, panel.lastChild);
-form_container.insertBefore(form_instructions, form_container.lastChild);
-panel.insertBefore(form_container, panel.lastChild);
-panel.insertBefore(toggle_analyze, panel.lastChild);
-main_container.insertBefore(panel, main_container.lastChild);
-
-log("Budget Buddy Ready");

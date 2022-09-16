@@ -6,12 +6,14 @@ const start_processing_client = `{"enabled":true,"emptyMessage":"","validationTe
 const end_processing_date = "12/30/2099 12:00 AM";
 const end_processing_client = `{"enabled":true,"emptyMessage":"","validationText":"2010-01-01-00-00-00","valueAsString":"2010-01-01-00-00-00","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"1/1/2010 12:00 AM"}`;
 
+const head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
+const main_container = document.querySelector("#mainContainer").querySelector("#Content");
+
 var bb_token_valid;
 var bb_token_data;
 var bb_current_data;
 var bb_matched_data;
-
-const matches_threshold = 5;
+var running;
 
 // Custom BudgetBuddy Logger
 var og_log = console.log;
@@ -24,15 +26,17 @@ var log = function () {
     og_log.apply(console, a);
 };
 
-const head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
-const main_container = document.querySelector("#mainContainer").querySelector("#Content");
-
 const css = document.createElement('link');
 css.setAttribute("href", chrome.runtime.getURL('bb.css'));
 css.id = "bb-css";
 css.rel = "stylesheet";
 
-var running;
+const js = document.createElement('script');
+js.setAttribute("src", chrome.runtime.getURL('m4in.js'));
+js.id = "bb-js";
+js.type = "text/javascript";
+
+// Insertions
 
 var work_in_progress = document.createElement("div");
 work_in_progress.id = "bb-wip";
@@ -70,6 +74,7 @@ wip_analyze.onclick = function (e) {
 work_in_progress.insertBefore(wip_stop, work_in_progress.lastChild);
 work_in_progress.insertBefore(wip_title, work_in_progress.lastChild);
 work_in_progress.insertBefore(wip_analyze, work_in_progress.lastChild);
+document.body.insertBefore(work_in_progress, document.body.lastChild);
 
 var panel = document.createElement("div");
 panel.id = "bb-action-panel";
@@ -87,6 +92,17 @@ form_title.classList.add(["formIntroText"]);
 form_title.innerText = "Budget Buddy";
 
 // Functions
+
+// Custom BudgetBuddy Logger
+var og_log = console.log;
+var log = function () {
+    a = [];
+    a.push('[bb][index.js]\t');
+    for (var i = 0; i < arguments.length; i++) {
+        a.push(arguments[i]);
+    }
+    og_log.apply(console, a);
+};
 
 function wait_for_timeout(timeout) {
     return new Promise(function (resolve, reject) {
@@ -162,21 +178,6 @@ function uuid_v4() {
     );
 }
 
-/**
- * Find node with specified innerText from a NodeList.
- * @param {NodeList} node_list 
- * @param {String} text 
- * @returns {Node | null}
- */
-function find_node_with_inner_text(node_list, text) {
-    for (node of node_list) {
-        if (node.innerText === text) {
-            return node
-        }
-    }
-    return null;
-}
-
 // https://stackoverflow.com/a/60467595
 //  A formatted version of a popular md5 implementation.
 //  Original copyright (c) Paul Johnston & Greg Holt.
@@ -225,27 +226,41 @@ function md5(inputString) {
     return rh(a) + rh(b) + rh(c) + rh(d);
 }
 
+function get_current_page() {
+    let target = document.querySelector(".rgCurrentPage");
+    if (!target)
+        return null;
+    return Number(target.innerText);
+}
+
+function get_pages() {
+    return Number(document.querySelector(".rgInfoPart").innerText.split(/\,/gm)[0].trim().replace(/[^0-9\s]/gm, '').trim().split(/\s/gm).at(-1));
+}
+
+/**
+ * Find node with specified innerText from a NodeList.
+ * @param {NodeList} node_list 
+ * @param {String} text 
+ * @returns {Node | null}
+ */
+function find_node_with_inner_text(node_list, text) {
+    for (node of node_list) {
+        if (node.innerText === text) {
+            return node
+        }
+    }
+    return null;
+}
+
+// window.m4in = async function () {
 async function main() {
     log("Budget Buddy Initiated");
-
-    // Requires context of main()
-    function get_current_page() {
-        let target = document.querySelector(".rgCurrentPage");
-        if (!target)
-            return null;
-        return Number(target.innerText);
-    }
-
-    // Requires context of main()
-    function get_pages() {
-        return Number(document.querySelector(".rgInfoPart").innerText.split(/\,/gm)[0].trim().replace(/[^0-9\s]/gm, '').trim().split(/\s/gm).at(-1));
-    }
 
     if (bb_token_valid)
         log("Resuming Session", bb_token_param);
 
     running = true;
-    toggle_button.disabled = true;
+    // toggle_button.disabled = true;
 
     try {
         work_in_progress.classList.remove(["bb-hidden"]);
@@ -305,7 +320,7 @@ async function main() {
 
                         // This algorithm could be improved, it should work.
                         // This would break if the user scrapes their data between two transactions with the same hash.
-                        if (bb_current_data && hash === bb_current_data[0].id) {
+                        if (bb_current_data && bb_current_data.length && hash === bb_current_data[0].id) {
                             log("Found match", hash);
                             bb_matched_data = hash;
                             resolve();
@@ -329,8 +344,8 @@ async function main() {
             wip_stop.value = "Close";
         }
 
-        var current_page = bb_token_valid ? bb_token_data["current_page"] : null;
-        var refresh_interval = 8;
+        let current_page = bb_token_valid ? bb_token_data["current_page"] : null;
+        let refresh_interval = 8;
 
         if (bb_token_valid) {
             log("Navigating to last processed page: " + current_page + ", then target page: " + (current_page + 1)); // i.e. Navigating to last processed page: 1, then target page: 2
@@ -386,7 +401,7 @@ async function main() {
                     }
 
                     try {
-                        find_node_with_inner_text(document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00").querySelectorAll("tbody")[0].querySelectorAll("a"), `${current_page + 1}`).click();
+                        document.querySelector("#ctl00_MainContent_ResultRadGrid_ctl00 tbody a.rgCurrentPage + a").click();
                     } catch (e) {
                         log("No more <a> elements with matching innerText");
                         try {
@@ -454,17 +469,20 @@ var toggle_button = document.createElement("input");
 toggle_button.value = "Start";
 toggle_button.type = "button";
 toggle_button.style.marginRight = "1em";
-toggle_button.classList.add(["button"])
-toggle_button.onclick = function (e) {
-    e.preventDefault();
-    chrome.storage.local.get("data", async function (result) {
+toggle_button.classList.add(["button"]);
+toggle_button.onclick = function () {
+    chrome.storage.local.get(["data"], function (result) {
         if (Object.keys(result).includes("data")) {
             bb_current_data = result["data"];
-            console.log(bb_current_data[0]);
         }
-        await main();
-    })
-}
+        main();
+    });
+};
+
+// toggle_button.setAttribute("onclick", "(" + async function () {
+//     this.disabled = true;
+//     await window.m4in();
+// } + ")()");
 
 var toggle_analyze = document.createElement("input");
 toggle_analyze.value = "Launch Analyzer";
@@ -475,13 +493,14 @@ toggle_analyze.onclick = function (e) {
     chrome.runtime.sendMessage("analyze");
 }
 
-chrome.storage.local.get(["data"], function (result) {
-    var data = result.data;
-    bb_current_data = data.sort(function (a, b) {
-        Date.parse(b["date"]) - Date.parse(a["date"])
-    });
-});
+// chrome.storage.local.get(["data"], async function (result) {
+//     if (Object.keys(result).includes("data")) {
+//         js.setAttribute("data", JSON.stringify(result["data"]));
+//     }
+//     head.insertBefore(js, head.lastChild);
+// });
 
+// head.insertBefore(js, head.lastChild);
 head.insertBefore(css, head.lastChild);
 panel.insertBefore(toggle_button, panel.lastChild);
 panel.insertBefore(form_title, panel.lastChild);
@@ -489,6 +508,5 @@ form_container.insertBefore(form_instructions, form_container.lastChild);
 panel.insertBefore(form_container, panel.lastChild);
 panel.insertBefore(toggle_analyze, panel.lastChild);
 main_container.insertBefore(panel, main_container.lastChild);
-document.body.insertBefore(work_in_progress, document.body.lastChild);
 
 log("Budget Buddy Ready");
