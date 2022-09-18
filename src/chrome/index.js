@@ -7,6 +7,7 @@ const start_processing_date = "1/1/2010 12:00 AM";
 const start_processing_client = `{"enabled":true,"emptyMessage":"","validationText":"2010-01-01-00-00-00","valueAsString":"2010-01-01-00-00-00","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"1/1/2010 12:00 AM"}`;
 const end_processing_date = "12/30/2099 12:00 AM";
 const end_processing_client = `{"enabled":true,"emptyMessage":"","validationText":"2010-01-01-00-00-00","valueAsString":"2010-01-01-00-00-00","minDateStr":"1980-01-01-00-00-00","maxDateStr":"2099-12-31-00-00-00","lastSetTextBoxValue":"1/1/2010 12:00 AM"}`;
+const version = chrome.runtime.getManifest().version;
 
 const head = document.head || document.getElementsByTagName("head")[0] || document.documentElement;
 const main_container = document.querySelector("#mainContainer").querySelector("#Content");
@@ -317,7 +318,7 @@ async function main() {
         document.querySelector("#MainContent_TransactionType").value = document.querySelector("#MainContent_TransactionType").querySelectorAll("option")[0].value;
         document.querySelector("#MainContent_ContinueButton").click(); // Submit Form
 
-        let data = bb_token_data ? bb_token_data["data"] : [];
+        let data = bb_token_data ? bb_token_data.data : [];
 
         function collect_data() {
             return new Promise(async function (resolve, reject) {
@@ -361,9 +362,16 @@ async function main() {
                         transaction_data["location"] = transaction.querySelectorAll("td")[3].innerText;
                         transaction_data["type"] = transaction.querySelectorAll("td")[4].innerText;
                         transaction_data["amount"] = Number((transaction.querySelectorAll("td")[5].innerText).replace(/[^0-9\.]/gm, ""));
+                        transaction_data["matched"] = false; // Mark transaction as unmatched
 
                         let hash = md5(JSON.stringify(transaction_data));
                         transaction_data["id"] = hash;
+
+                        // Check if current data or existing data contains transaction with matching hash
+                        if (data.some(e => e.id === hash) || (bb_current_data && bb_current_data.some(e => e.id === hash))) {
+                            log("Marking transaction with matched hash " + hash);
+                            transaction_data["matched"] = true;
+                        }
 
                         // Section for checker-reduction algorithm
 
@@ -411,8 +419,8 @@ async function main() {
 
         if (bb_matched_data) {
             log("Found repeated data, concatenating old data");
-            var new_data = data.concat(bb_current_data);
-            chrome.storage.local.set({ bb_token: {}, data: new_data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) });
+            let new_data = data.concat(bb_current_data);
+            chrome.storage.local.set({ bb_token: {}, data: { data: new_data, version: version, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) } });
             end("Data Update Complete");
             return;
         }
@@ -489,7 +497,7 @@ async function main() {
             return;
         }
 
-        chrome.storage.local.set({ bb_token: {}, data: data, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, function () {
+        chrome.storage.local.set({ bb_token: {}, data: { data: data, version: version, last_update: new Date().toLocaleString("en-US", { timeZoneName: 'short' }) }, }, function () {
             log("Transaction history saved to local storage");
             end("Data Collection Complete");
         })
@@ -505,20 +513,18 @@ async function main() {
 if (bb_token_param) { // If the page URL contains a bb_token parameter
     log("Validating token", bb_token_param);
     chrome.storage.local.get(["bb_token", "data"], function (result) {
-        if (Object.keys(result).includes("bb_token")) {
-            if (result["bb_token"] && result["bb_token"]["bb_token"] === bb_token_param) {
-                bb_token_data = result["bb_token"];
-                bb_token_valid = true;
-                if (Object.keys(result).includes("data")) {
-                    bb_current_data = result["data"];
-                    if (bb_current_data && bb_current_data.length > 0) {
-                        wip_title.innerText = "Data Update in Progress";
-                    }
+        if (result.bb_token && result.bb_token.bb_token === bb_token_param) {
+            bb_token_data = result.bb_token;
+            bb_token_valid = true;
+            if (Object.keys(result).includes("data")) {
+                bb_current_data = result.data.data; // This requires result.data to be an object
+                if (bb_current_data && bb_current_data.length > 0) {
+                    wip_title.innerText = "Data Update in Progress";
                 }
-                main();
-            } else {
-                log("Invalid token");
             }
+            main();
+        } else {
+            log("Invalid token");
         }
     })
 }
@@ -531,7 +537,7 @@ toggle_button.classList.add(["button"]);
 toggle_button.onclick = function () {
     chrome.storage.local.get(["data"], function (result) {
         if (Object.keys(result).includes("data")) {
-            bb_current_data = result["data"];
+            bb_current_data = result.data.data;
             if (bb_current_data && bb_current_data.length > 0) {
                 wip_title.innerText = "Data Update in Progress";
             }

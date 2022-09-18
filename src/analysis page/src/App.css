@@ -24,6 +24,7 @@ a:hover {
 
 #analyzer {
   height: 100vh;
+  min-height: 800px;
 }
 
 hr {
@@ -42,7 +43,7 @@ hr {
   overflow: auto;
   border: 2px solid #404040;
   flex: 1;
-  margin-bottom: 12px;
+  margin-bottom: 0.5em;
 }
 
 .totals_table {
@@ -131,24 +132,45 @@ tr:nth-child(even) {
   padding: 8px 12px;
   box-sizing: border-box;
   border-radius: 12px;
-  margin-bottom: 12px;
+  margin: 1em 0 0.5em 0;
+}
+
+.default-options {
   display: flex;
   flex-direction: row;
 }
 
-.options > :not(:first-child) {
+.more-options {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: 0.5em;
+}
+
+.option-panel {
+  border: 2px solid #404040;
+  background-color: #373737;
+  display: block;
+  border-radius: 12px;
+  padding: 0.5em;
+}
+
+.option-panel input {
+  margin-left: 1em;
+}
+
+.default-options > :not(:first-child) {
   margin-left: 12px;
 }
 
 select {
   background-color: #404040;
   border: 2px solid #595959;
-  padding: 4px 6px;
+  padding: 0.5em;
   color: inherit;
   border-radius: 12px;
   font: inherit;
   font-size: inherit;
-  height: 36px;
   flex: 1;
   width: 100%;
 }
@@ -156,15 +178,19 @@ select {
 button {
   background-color: #737373;
   border: 2px solid #999999;
-  padding: 4px 12px;
+  padding: 0.5em 0.75em;
   color: inherit;
   border-radius: 12px;
   font: inherit;
   font-size: inherit;
-  height: 36px;
   cursor: pointer;
   width: fit-content;
   color: #e6e6e6;
+}
+
+button.warning {
+  background-color: #b71c1c;
+  border: 2px solid #d32f2f;
 }
 
 button.icon_button {
@@ -178,6 +204,52 @@ button.icon_button {
 button.icon_button svg {
   width: 100%;
   height: 100%;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #1b1b1b;
+  -webkit-transition: 0.4s;
+  transition: background-color 0.2s cubic-bezier(0, 0, 0.01, 1);
+  border-radius: 1em;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 24px;
+  width: 24px;
+  top: 0px;
+  left: 0;
+  background-color: #fefefe;
+  border-radius: 1em;
+  transition: transform 0.2s cubic-bezier(0, 0, 0.01, 1);
+}
+
+.toggle-switch input:checked + .slider {
+  background-color: #8bc34a;
+}
+
+.toggle-switch input:checked + .slider:before {
+  -webkit-transform: translateX(24px);
+  -ms-transform: translateX(24px);
+  transform: translateX(24px);
 }
 
 footer {
@@ -302,6 +374,25 @@ footer p {
   cursor: pointer;
 }
 
+#modal-settings {
+  margin-bottom: 0.5em;
+}
+
+#modal-settings .panel {
+  width: 100%;
+  max-width: 600px;
+  border: 2px solid #404040;
+  background-color: #373737;
+  box-sizing: border-box;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  padding: 1em;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
 #modal-content {
   position: relative;
   background-color: #262626;
@@ -313,6 +404,16 @@ footer p {
   overflow: auto;
   display: flex;
   flex-direction: column;
+}
+
+#modal-buttons {
+  display: flex;
+  flex-direction: row;
+  margin: -0.25em;
+}
+
+#modal-buttons button {
+  margin: 0.25em;
 }
 
 .extension-name {

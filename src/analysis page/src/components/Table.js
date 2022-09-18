@@ -50,18 +50,25 @@ export default class Table extends React.Component {
         })
     }
 
+    getTableHeaderClass(...field) {
+        if (field.includes(this.state.sort.primary_field)) return "selected primary";
+        // else if (this.state.primary_field === field) return "primary";
+        // else if (this.state.method === field) return "selected";
+        else return null;
+    }
+
     render() {
         return (
             <div className="table_container">
                 <table>
                     <thead>
                         <tr className="table_header">
-                            <th className={this.state.method === "location" && this.state.primary_field === "location" ? "selected primary" : this.state.primary_field === "location" ? "primary" : this.state.method === "location" ? "selected" : null} onClick={(e) => this.sortBy(e, "location")}>Location</th>
-                            <th className={this.state.method === "amount" && this.state.primary_field === "amount" ? "selected primary" : this.state.primary_field === "amount" ? "primary" : this.state.method === "amount" ? "selected" : null} onClick={(e) => this.sortBy(e, "amount")}>Amount</th>
-                            <th className={this.state.method === "account" && this.state.primary_field === "account" ? "selected primary" : this.state.primary_field === "account" ? "primary" : this.state.method === "account" ? "selected" : null} onClick={(e) => this.sortBy(e, "account")}>Account</th>
-                            <th className={this.state.method === "date" && this.state.primary_field === "date" ? "selected primary" : this.state.primary_field === "date" ? "primary" : this.state.method === "date" ? "selected" : null} onClick={(e) => this.sortBy(e, "date")}>Date</th>
-                            <th className={(this.state.method === "date" && this.state.primary_field === "date" ? "selected primary" : this.state.primary_field === "date" ? "primary" : this.state.method === "date" ? "selected" : null) || (this.state.method === "time" && this.state.primary_field === "time" ? "selected primary" : this.state.primary_field === "time" ? "primary" : this.state.method === "time" ? "selected" : null)} onClick={(e) => this.sortBy(e, "time")}>Time</th>
-                            <th className={this.state.method === "type" && this.state.primary_field === "type" ? "selected primary" : this.state.primary_field === "type" ? "primary" : this.state.method === "type" ? "selected" : null} onClick={(e) => this.sortBy(e, "type")}>Type</th>
+                            <th className={this.getTableHeaderClass("location")} onClick={(e) => this.sortBy(e, "location")}>Location</th>
+                            <th className={this.getTableHeaderClass("amount")} onClick={(e) => this.sortBy(e, "amount")}>Amount</th>
+                            <th className={this.getTableHeaderClass("account")} onClick={(e) => this.sortBy(e, "account")}>Account</th>
+                            <th className={this.getTableHeaderClass("date")} onClick={(e) => this.sortBy(e, "date")}>Date</th>
+                            <th className={this.getTableHeaderClass("time", "date")} onClick={(e) => this.sortBy(e, "time")}>Time</th>
+                            <th className={this.getTableHeaderClass("type")} onClick={(e) => this.sortBy(e, "type")}>Type</th>
                         </tr>
                     </thead>
                     <tbody>

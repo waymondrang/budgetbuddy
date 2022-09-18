@@ -5,96 +5,71 @@ import './App.css';
 import React from 'react';
 import Table from './components/Table';
 import clean from './utilities/clean';
+import ToggleSwitch from './components/ToggleSwitch';
 
 export default class App extends React.Component {
   constructor(props) {
     super(props)
     this.state = {
-      method: "date",
-      primary_param: "",
-      locations: [],
-      filter: {
-        location: ""
+      raw_data: {
+        data: [],
+        version: "",
+        last_update: ""
       },
-      last_update: "",
-      version: "",
-      outdated_version: -1,
-      newest_version: "",
-      debug: new URLSearchParams(window.location.search).has("debug"),
       data: [],
       filtered_data: [],
-      dining_dollars: -1,
-      triton_cash: -1,
-      triton2go: -1,
+      locations: [],
+      filter: {
+        location: "bb_all_locations"
+      },
+      settings: { // Default settings
+        use_location_parser: true
+      },
+      version: "",
+      outdated_version: -1,
+      debug: new URLSearchParams(window.location.search).has("debug"),
       start_date: new Date(2022, 9 - 1, 19, 0, 0, 0, 0),
       end_date: new Date(2023, 6 - 1, 16 + 1, 0, 0, 0, 0), // School year end date (June 16th + 1, 2023 00:00:00)
-      modal: false,
+      modal: false, // Should be false, unless debugging
+      expandFilters: false,
     }
 
     this.onLocationFilterChange = this.onLocationFilterChange.bind(this);
-    this.applyFilter = this.applyFilter.bind(this);
     this.spentDateDining = this.spentDateDining.bind(this);
     this.toggleModal = this.toggleModal.bind(this);
     this.resetData = this.resetData.bind(this);
     this.downloadData = this.downloadData.bind(this);
+    this.updateSettings = this.updateSettings.bind(this);
   }
 
   async componentDidMount() {
     const self = this;
     if (this.state.debug) {
-      var locations = [];
-      var version = "99.99.99";
-      var data = [{ "account": "Dining Dollars Rollover", "amount": 46.59, "date": "2022-07-11T23:09:00.000Z", "id": "b8ebcce8f3a3a6232199708438c4bcaf", "location": "Triton Card Accounts Services HDH-R-APP-AD", "time": "4:09 PM", "type": "Debit" }, { "account": "Dining Dollars Rollover", "amount": 60.52, "date": "2022-06-16T22:27:00.000Z", "id": "a4bd8d3a7f6ae6d892443e9534771ad8", "location": "Triton Card Accounts Services HDH-R-APP-AD", "time": "3:27 PM", "type": "Credit" }, { "account": "Dining Dollars", "amount": 60.52, "date": "2022-06-16T20:50:00.000Z", "id": "bc52301799487a43c23e51eb7a732c44", "location": "Triton Card Accounts Services HDH-R-APP-AD", "time": "1:50 PM", "type": "Debit" }, { "account": "Triton2Go Dining Dollars", "amount": 5, "date": "2022-06-16T13:00:00.000Z", "id": "f0770e6f954b779361e8096bcbf16d44", "location": "System HDH-DINERO", "time": "6:00 AM", "type": "Credit" }, { "account": "Dining Dollars", "amount": 21.28, "date": "2022-06-08T03:35:00.000Z", "id": "0150b20cc6e5c0a2befd13c19e261b6e", "location": "HDH Seventh Market Seventh Market 3", "time": "8:35 PM", "type": "Debit" }];
-      let cleaned_data = clean(data);
-      let last_update = "Debug Season";
-      for (var transaction of data) {
-        if (!locations.includes(transaction["location"])) {
-          locations.push(transaction["location"]);
-        }
-      }
-      var newest_version;
-      try {
-        var newest_mainfest = await fetch("https://raw.githubusercontent.com/waymondrang/budgetbuddy/main/src/chrome/manifest.json").then(result => result.json())
-        newest_version = newest_mainfest["version"];
-      } catch (e) {
-        console.log(e)
-      }
+      let raw_data = { "data": [{ "account": "Dining Dollars Rollover", "amount": 46.59, "date": "2022-07-11T23:09:00.000Z", "id": "a35bd4d463b75fbc1a2780dd00a0452c", "location": "Triton Card Accounts Services HDH-R-APP-AD", "matched": false, "time": "4:09 PM", "type": "Debit" }, { "account": "Dining Dollars Rollover", "amount": 60.52, "date": "2022-06-16T22:27:00.000Z", "id": "e6dbabfba680d8e22372bda38a83b462", "location": "Triton Card Accounts Services HDH-R-APP-AD", "matched": false, "time": "3:27 PM", "type": "Credit" }, { "account": "Dining Dollars", "amount": 60.52, "date": "2022-06-16T20:50:00.000Z", "id": "0b34164a8cea44dd655847d39c4860a6", "location": "Triton Card Accounts Services HDH-R-APP-AD", "matched": false, "time": "1:50 PM", "type": "Debit" }], "last_update": "9/18/2022, 1:56:14 PM PDT", "version": "1.0.2" };
+      let settings = self.state.settings;
+      let cleaned_data = clean(raw_data.data);
+      raw_data.data = cleaned_data; // Update raw data with cleaned data
+      let locations = settings.use_location_parser ? self.parseLocations(cleaned_data) : self.getLocations(cleaned_data);
       self.setState({
         data: cleaned_data,
-        version: version,
-        newest_version: newest_version,
-        outdated_version: (newest_version && version) ? (+((version).replace(/[^0-9]/gm, "")) < +((newest_version).replace(/[^0-9]/gm, "")) ? 1 : +((version).replace(/[^0-9]/gm, "")) === +((newest_version).replace(/[^0-9]/gm, "")) ? 2 : 3) : 0,
-        filtered_data: data,
-        last_update: last_update,
-        locations: locations.sort(function (a, b) { return a.localeCompare(b) }),
-        dining_dollars: +(data.filter(e => e["type"] === "Credit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0)).toFixed(2)
+        raw_data: raw_data,
+        locations: locations,
+        settings: settings
       })
-      return
     }
-
     // Fetch and process data from local storage
     try {
-      window.chrome.storage.local.get(['data', 'last_update'], async function (result) {
-        var data = result["data"];
-        var last_update = result["last_update"]
-        if (!data) {
-          console.log("no data found!");
-          return;
-        }
-        var locations = [];
-        for (var transaction of data) {
-          if (!locations.includes(transaction["location"])) {
-            locations.push(transaction["location"]);
-          }
-        }
+      window.chrome.storage.local.get(['data', 'settings'], async function (result) {
+        let raw_data = result.data;
+        let settings = Object.keys(result).includes("settings") ? result.settings : self.state.settings;
+        let cleaned_data = clean(raw_data.data);
+        raw_data.data = cleaned_data; // Update raw data with cleaned data
+        let locations = settings.use_location_parser ? self.parseLocations(cleaned_data) : self.getLocations(cleaned_data);
         self.setState({
-          data: data,
-          filtered_data: data,
-          last_update: last_update,
-          locations: locations.sort(function (a, b) { return a.localeCompare(b) }),
-          dining_dollars: +(data.filter(e => e["type"] === "Credit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && (e["account"] === "Dining Dollars" || e["account"] === "Dining Dollars Rollover")).reduce((a, b) => a + b["amount"], 0)).toFixed(2),
-          triton_cash: +(data.filter(e => e["type"] === "Credit" && e["account"] === "Triton Cash").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && e["account"] === "Triton Cash").reduce((a, b) => a + b["amount"], 0)).toFixed(2),
-          triton2go: +(data.filter(e => e["type"] === "Credit" && e["account"] === "Triton2Go Dining Dollars").reduce((a, b) => a + b["amount"], 0) - data.filter(e => e["type"] === "Debit" && e["account"] === "Triton2Go Dining Dollars").reduce((a, b) => a + b["amount"], 0)).toFixed(2)
+          data: cleaned_data,
+          raw_data: raw_data,
+          locations: locations,
+          settings: settings
         })
       })
     } catch (e) {
@@ -120,53 +95,81 @@ export default class App extends React.Component {
     }
   }
 
-  onLocationFilterChange(e) {
-    var filter = this.state.filter;
-    var location = e.target.value;
-    filter["location"] = location;
-    if (location === "bb_all_locations") {
-      this.setState({
-        filtered_data: this.state.data,
-        filter: filter
-      })
-    } else {
-      var data = this.state.data.filter(e => e["location"] === location);
-      this.setState({
-        filtered_data: data,
-        filter: filter
-      })
-    }
-  }
-
-  // Unused
-  applyFilter(e) {
-    console.log("applying filter", this.state.filter);
-    if (this.state.filter["location"]) {
-      if (this.state.filter["location"] === "bb_all_locations") {
-        this.setState({
-          filtered_data: this.state.data
-        })
-      } else {
-        var data = this.state.data.filter(e => e["location"] === this.state.filter["location"]);
-        this.setState({
-          filtered_data: data
-        })
+  /**
+   * 
+   * @param {RegExp} account Case-sensitive account name
+   * @param {Array} data Data to filter
+   * @returns {number} Total amount spent in category
+   */
+  calculateTotal(account, data) {
+    if (!data) return;
+    let total = 0;
+    for (var transaction of data) {
+      if ((transaction.account).match(account)) {
+        total += transaction.type === "Credit" ? transaction.amount : -transaction.amount;
       }
     }
+    return total.toFixed(2);
   }
 
+  parseLocations(data) {
+    if (!data) return;
+    let locations = [];
+    for (let transaction of data) {
+      let match = /^(.*)(?:\s[0-9]+|\sleft|\sright|\smobile\s?o?r?d?e?r?i?n?g?)$/gmi.exec(transaction.location);
+      let location = match ? match[1] : transaction.location;
+      if (!locations.includes(location)) {
+        locations.push(location);
+      }
+    }
+    return locations.sort(function (a, b) { return a.localeCompare(b) });
+  }
+
+  getLocations(data) {
+    let locations = [];
+    for (let transaction of data) {
+      if (!locations.includes(transaction.location)) {
+        locations.push(transaction.location);
+      }
+    }
+    return locations.sort(function (a, b) { return a.localeCompare(b) });
+  }
+
+  onLocationFilterChange(filter) {
+    let data = filter.hdh_only ? (this.state.raw_data.data).filter(e => (e.location).match(/^hdh/gmi)) : this.state.raw_data.data; // Filter out HDH only
+    data = filter.location === "bb_all_locations" ? data : data.filter(e => (e.location).includes(filter.location));
+    if (filter.location === "bb_all_locations") {
+      let locations = this.state.settings.use_location_parser ? this.parseLocations(data) : this.getLocations(data);
+      this.setState({
+        data: data,
+        filter: filter,
+        locations: locations
+      })
+    } else {
+      let locations = this.state.settings.use_location_parser ? this.parseLocations(filter.hdh_only ? (this.state.raw_data.data).filter(e => (e.location).match(/^hdh/gmi)) : this.state.raw_data.data) : this.getLocations(filter.hdh_only ? (this.state.raw_data.data).filter(e => (e.location).match(/^hdh/gmi)) : this.state.raw_data.data);
+      this.setState({
+        data: data,
+        filter: filter,
+        locations: locations
+      })
+    }
+  }
+
+  // Currently unused
   daysLeft() {
     var currentDay = new Date();
     currentDay.setHours(0, 0, 0, 0);
     return Math.round((this.state.end_date - currentDay) / (1000 * 60 * 60 * 24));
   }
 
+  // Currently unused
   daysPast() {
     var currentDay = new Date();
     currentDay.setHours(0, 0, 0, 0);
     return Math.round((currentDay - this.state.start_date) / (1000 * 60 * 60 * 24));
   }
 
+  // Currently unused
   spentDateDining(start_date, end_date) {
     if (!this.state.data.length) {
       return
@@ -186,11 +189,11 @@ export default class App extends React.Component {
 
   resetData() {
     window.chrome.storage.local.set({
-      data: []
+      data: {}
     });
     this.setState({
       data: [],
-      filtered_data: [],
+      raw_data: {},
     })
   }
 
@@ -207,6 +210,28 @@ export default class App extends React.Component {
     download_node.remove();
   }
 
+  /**
+   * Updates settings using name ToggleSwitch
+   * @param {*} e Click event
+   */
+  updateSettings(e) {
+    try {
+      let settings = this.state.settings;
+      settings[e.target.name] = e.target.checked;
+      this.setState({
+        settings: settings
+      })
+      window.chrome.storage.local.set({
+        settings: settings
+      }, function () {
+        console.log("Settings updated in local storage.");
+      });
+    } catch (e) {
+      console.log("The below error, if regarding reading 'local', is expected and can be ignored in development mode.")
+      console.log(e);
+    }
+  }
+
   render() {
     return (
       <div id="main">
@@ -214,24 +239,55 @@ export default class App extends React.Component {
           <div id="modal">
             <div id="modal-background" onClick={this.toggleModal} />
             <div id="modal-content">
-              <p className='extension-name'>Budget Buddy Extension and Web App</p>
+              <p className='extension-name'>BudgetBuddy Extension and Web App</p>
               <p className='extension-author'>Created by <a href='https://waymondrang.com'>Raymond Wang</a></p>
-              <button onClick={this.resetData}>Reset Data</button>
-              <button onClick={this.downloadData}>Download Data</button>
+              <div id='modal-settings'>
+                <div className='panel'>
+                  <span>Use Location Parser</span>
+                  <ToggleSwitch name="use_location_parser" checked={this.state.settings.use_location_parser} onChange={this.updateSettings} />
+                </div>
+              </div>
+              <div id='modal-buttons'>
+                <button onClick={this.downloadData}>Download Data</button>
+                <button onClick={this.resetData} className='warning'>Reset Data</button>
+              </div>
             </div>
           </div> : null
         }
         <section id="analyzer">
-          <h1 id="title">Budget Buddy Analyzer</h1>
-          <p>Shift + Click on a header field to set it as the primary sort parameter.</p>
+          <h1 id="title">BudgetBuddy Analyzer</h1>
+          {/* <p>Shift + Click on a header field to set it as the primary sort parameter.</p> */}
           <div className="options">
-            <select className="option" value={this.state.filter["location"]} onChange={this.onLocationFilterChange}>
-              <option key="bb_default" value="" disabled>Select Location</option>
-              <option key="bb_all_locations" value="bb_all_locations">All Locations</option>
-              {this.state.locations.map(e =>
-                <option key={e} value={e}>{e}</option>
-              )}
-            </select>
+            <div className='default-options'>
+              <select className="option" value={this.state.filter.location} onChange={(e) => {
+                let filter = this.state.filter;
+                filter.location = e.target.value;
+                this.onLocationFilterChange(filter);
+              }}>
+                <option key="bb_default" value="" disabled>Select Location</option>
+                <option key="bb_all_locations" value="bb_all_locations">All Locations</option>
+                {this.state.locations.map(e =>
+                  <option key={e} value={e}>{e}</option>
+                )}
+              </select>
+              <button onClick={(e) => {
+                this.setState({
+                  expandFilters: !this.state.expandFilters
+                })
+                e.target.innerText = this.state.expandFilters ? "Expand Filters" : "Collapse Filters"
+              }}>Expand Filters</button>
+            </div>
+            {this.state.expandFilters ?
+              <div className='more-options'>
+                <div className='option-panel'>
+                  <span>Show HDH Only</span>
+                  <input type="checkbox" name="hdh_only" checked={this.state.filter.hdh_only} onChange={(e) => {
+                    let filter = this.state.filter;
+                    filter.hdh_only = e.target.checked;
+                    this.onLocationFilterChange(filter);
+                  }} />
+                </div>
+              </div> : null}
           </div>
           <Table data={this.state.data} />
           <div className="totals_table">
@@ -247,19 +303,19 @@ export default class App extends React.Component {
               <tbody>
                 <tr>
                   <td></td>
-                  <td>${this.state.dining_dollars}</td>
-                  <td>${this.state.triton_cash}</td>
-                  <td>${this.state.triton2go}</td>
+                  <td>${this.calculateTotal(new RegExp(/^dining dollars/gmi), this.state.data)}</td>
+                  <td>${this.calculateTotal(new RegExp(/^triton cash/gmi), this.state.data)}</td>
+                  <td>${this.calculateTotal(new RegExp(/^triton2go/gmi), this.state.data)}</td>
                 </tr>
               </tbody>
             </table>
           </div>
           <footer>
             <div id="update">
-              <p>Data Updated: {this.state.last_update}</p>
+              <p>Data Updated: {this.state.raw_data.last_update}</p>
               <a className='update_button' href="https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"><button>Update</button></a>
             </div>
-            <p id="transactions">{this.state.filtered_data.length} {this.state.filtered_data.length !== 1 ? "Transactions" : "Transaction"}</p>
+            <p id="transactions">{this.state.data.length} {this.state.data.length !== 1 ? "Transactions" : "Transaction"}</p>
           </footer>
         </section>
         <hr />
