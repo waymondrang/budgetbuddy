@@ -35,6 +35,7 @@ hr {
 
 #title {
   margin: 0;
+  margin-bottom: 0.25em;
 }
 
 .table_container {
@@ -160,7 +161,7 @@ tr:nth-child(even) {
 }
 
 .default-options > :not(:first-child) {
-  margin-left: 12px;
+  margin-left: 0.5em;
 }
 
 select {

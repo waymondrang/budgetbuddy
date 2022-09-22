@@ -19,12 +19,12 @@ Please refer to the [Issues section](https://github.com/waymondrang/budget-buddy
 As a browser extension, Budget Buddy has exclusive access to view and change information on the [eAccounts Account Transactions page](https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx). Budget Buddy also has permission to store data locally in the browser and open new tabs.
 
 ## Installation
-
+ 
 To install Budget Buddy, either pull/clone the repository or download as .zip. If necessary, unzip the file, then navigate to the Chrome Extensions page at `chrome://extensions/`.
 
-Once on the Chrome Extensions page, enable **Developer Mode** using the toggle on the top-right of the page. A button drawer should then appear.
+Once on the Chrome Extensions page, enable **Developer Mode** using the toggle on the top-right of the page, revealing a button drawer.
 
-Select **Load Unpacked** and locate the file with the contents of Budget Buddy. Budget Buddy should now appear under the list of installed extensions. Make sure that the version of your installed Budget Buddy matches the most up to date version.
+Select **Load Unpacked** and locate the folder with the contents of Budget Buddy. Budget Buddy should now appear under the list of installed extensions. Make sure that the version of your installed Budget Buddy matches the most up to date version.
 
 Congrats, you've installed Budget Buddy!
 
@@ -38,7 +38,7 @@ Collected transaction data is automatically saved at the end of the process
 
 After the process finishes, two options will appear.
 
-- **Analyze** will open the Budget Buddy Analyzer web app, where users can visualize, sort, and filter through transactions.
+- **Launch Analyzer** will open the Budget Buddy Analyzer web app, where users can visualize, sort, and filter through transactions.
 
 - **Awesome** closes the overlay.
 

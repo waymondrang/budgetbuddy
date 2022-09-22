@@ -256,7 +256,7 @@ export default class App extends React.Component {
         }
         <section id="analyzer">
           <h1 id="title">BudgetBuddy Analyzer</h1>
-          {/* <p>Shift + Click on a header field to set it as the primary sort parameter.</p> */}
+          <span>Click on a header field to set it as the primary parameter. Click it again to reverse.</span>
           <div className="options">
             <div className='default-options'>
               <select className="option" value={this.state.filter.location} onChange={(e) => {
