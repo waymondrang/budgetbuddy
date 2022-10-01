@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "BudgetBuddy",
   "author": "Raymond Wang",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A collection and analysis tool for UCSD HDH Account transactions",
   "content_scripts": [
     {
