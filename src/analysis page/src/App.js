@@ -237,17 +237,17 @@ export default class App extends React.Component {
       <div id="main">
         {this.state.modal ?
           <div id="modal">
-            <div id="modal-background" onClick={this.toggleModal} />
-            <div id="modal-content">
-              <p className='extension-name'>BudgetBuddy Extension and Web App</p>
-              <p className='extension-author'>Created by <a href='https://waymondrang.com'>Raymond Wang</a></p>
-              <div id='modal-settings'>
+            <div id="modal_background" onClick={this.toggleModal} />
+            <div id="modal_content">
+              <p className='extension_name'>BudgetBuddy Extension and Analyzer</p>
+              <p className='extension_author'>Created by <a href='https://waymondrang.com'>Raymond Wang</a></p>
+              <div id='modal_settings'>
                 <div className='panel'>
                   <span>Use Location Parser</span>
                   <ToggleSwitch name="use_location_parser" checked={this.state.settings.use_location_parser} onChange={this.updateSettings} />
                 </div>
               </div>
-              <div id='modal-buttons'>
+              <div id='modal_buttons'>
                 <button onClick={this.downloadData}>Download Data</button>
                 <button onClick={this.resetData} className='warning'>Reset Data</button>
               </div>
@@ -256,7 +256,7 @@ export default class App extends React.Component {
         }
         <section id="analyzer">
           <h1 id="title">BudgetBuddy Analyzer</h1>
-          <span>Click on a header field to set it as the primary parameter. Click it again to reverse.</span>
+          <span>Click on a header field to sort. Click again to reverse.</span>
           <div className="options">
             <div className='default-options'>
               <select className="option" value={this.state.filter.location} onChange={(e) => {
@@ -313,12 +313,12 @@ export default class App extends React.Component {
           <footer>
             <div id="update">
               <p>Data Updated: {this.state.raw_data.last_update}</p>
-              <a className='update_button' href="https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"><button>Update</button></a>
+              <a className='update_button' href="https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx"><button>Update Data</button></a>
             </div>
             <p id="transactions">{this.state.data.length} {this.state.data.length !== 1 ? "Transactions" : "Transaction"}</p>
           </footer>
         </section>
-        <hr />
+        {/* <hr /> */}
         {/* <section>
           <h1>Dining Dollars</h1>
           <div className="info_card_container">
@@ -373,12 +373,14 @@ export default class App extends React.Component {
           </div>
         </section> 
         <hr /> */}
-        <section id='extra'>
-          <p>{this.state.debug ? " Debug Mode" : null} {this.state.version ? "v" + this.state.version : null} {this.state.outdated_version === 2 ? "(Latest)" : this.state.outdated_version === 3 ? "(Preview)" : null}</p>
-          <button className="icon_button" id='about' onClick={this.toggleModal}>
-            <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox='0 0 48 48'><path d="M24.15 34q.65 0 1.075-.425.425-.425.425-1.075v-9.05q0-.6-.45-1.025Q24.75 22 24.15 22q-.65 0-1.075.425-.425.425-.425 1.075v9.05q0 .6.45 1.025.45.425 1.05.425ZM24 18.3q.7 0 1.175-.45.475-.45.475-1.15t-.475-1.2Q24.7 15 24 15q-.7 0-1.175.5-.475.5-.475 1.2t.475 1.15q.475.45 1.175.45ZM24 44q-4.25 0-7.9-1.525-3.65-1.525-6.35-4.225-2.7-2.7-4.225-6.35Q4 28.25 4 24q0-4.2 1.525-7.85Q7.05 12.5 9.75 9.8q2.7-2.7 6.35-4.25Q19.75 4 24 4q4.2 0 7.85 1.55Q35.5 7.1 38.2 9.8q2.7 2.7 4.25 6.35Q44 19.8 44 24q0 4.25-1.55 7.9-1.55 3.65-4.25 6.35-2.7 2.7-6.35 4.225Q28.2 44 24 44Zm0-20Zm0 17q7 0 12-5t5-12q0-7-5-12T24 7q-7 0-12 5T7 24q0 7 5 12t12 5Z" /></svg>
-          </button>
-        </section>
+        <div id='extra_container'>
+          <section id='extra'>
+            <p>{this.state.debug ? " Debug Mode" : null} {this.state.version ? "v" + this.state.version : null} {this.state.outdated_version === 2 ? "(Latest)" : this.state.outdated_version === 3 ? "(Preview)" : null}</p>
+            <button className="icon_button" id='about' onClick={this.toggleModal}>
+              <svg xmlns="http://www.w3.org/2000/svg" height="24" width="24" viewBox='0 0 48 48'><path d="M24.15 34q.65 0 1.075-.425.425-.425.425-1.075v-9.05q0-.6-.45-1.025Q24.75 22 24.15 22q-.65 0-1.075.425-.425.425-.425 1.075v9.05q0 .6.45 1.025.45.425 1.05.425ZM24 18.3q.7 0 1.175-.45.475-.45.475-1.15t-.475-1.2Q24.7 15 24 15q-.7 0-1.175.5-.475.5-.475 1.2t.475 1.15q.475.45 1.175.45ZM24 44q-4.25 0-7.9-1.525-3.65-1.525-6.35-4.225-2.7-2.7-4.225-6.35Q4 28.25 4 24q0-4.2 1.525-7.85Q7.05 12.5 9.75 9.8q2.7-2.7 6.35-4.25Q19.75 4 24 4q4.2 0 7.85 1.55Q35.5 7.1 38.2 9.8q2.7 2.7 4.25 6.35Q44 19.8 44 24q0 4.25-1.55 7.9-1.55 3.65-4.25 6.35-2.7 2.7-6.35 4.225Q28.2 44 24 44Zm0-20Zm0 17q7 0 12-5t5-12q0-7-5-12T24 7q-7 0-12 5T7 24q0 7 5 12t12 5Z" /></svg>
+            </button>
+          </section>
+        </div>
       </div>
     )
   }
