@@ -1,6 +1,6 @@
-# BudgetBuddy ![BudgetBuddy version badge](https://img.shields.io/badge/dynamic/json?color=informational&label=version&query=%24.version&url=https%3A%2F%2Fraw.githubusercontent.com%2Fwaymondrang%2Fbetter-budget-buddy%2Fmain%2Fsrc%2Fchrome%2Fmanifest.json) <!-- omit in toc -->
+# BudgetBuddy <!-- omit in toc -->
 
-A browser extension for analyzing UCSD HDH Account transactions
+A browser extension for collecting and analyzing UCSD HDH Account transactions.
 
 ## Table of Contents <!-- omit in toc -->
 
@@ -32,15 +32,11 @@ Congrats, you've installed BudgetBuddy!
 
 To start utilizing BudgetBuddy, navigate to the [eAccounts Account Transactions page](https://eacct-ucsd-sp.transactcampus.com/eAccounts/AccountTransaction.aspx).
 
-Once the Account Transaction Report form appears, a separate box titled BudgetBuddy will appear under the form. Select **Begin** to initiate the data collection process.
+Once the Account Transaction Report form appears, a separate box titled BudgetBuddy will appear under the form. Click **Start** to initiate the data collection process.
 
 Collected transaction data is automatically saved at the end of the process
 
-After the process finishes, two options will appear.
-
-- **Launch Analyzer** will open the BudgetBuddy Analyzer web app, where users can visualize, sort, and filter through transactions.
-
-- **Awesome** closes the overlay.
+After the process finishes, two options will appear. **Launch Analyzer** will open the BudgetBuddy Analyzer page where users can visualize, sort, and filter through transactions.
 
 ## Analyze
 

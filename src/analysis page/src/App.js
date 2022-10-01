@@ -7,6 +7,8 @@ import Table from './components/Table';
 import clean from './utilities/clean';
 import ToggleSwitch from './components/ToggleSwitch';
 
+const github_url = 'https://raw.githubusercontent.com/waymondrang/budgetbuddy/main/src/extension/manifest.json';
+
 export default class App extends React.Component {
   constructor(props) {
     super(props)
@@ -80,7 +82,7 @@ export default class App extends React.Component {
     // Fetch and compare latest version
     try {
       let version = window.chrome.runtime.getManifest().version;
-      let newest_mainfest = await fetch("https://raw.githubusercontent.com/waymondrang/budgetbuddy/main/src/chrome/manifest.json").then(result => result.json());
+      let newest_mainfest = await fetch(github_url).then(result => result.json());
       let newest_version = newest_mainfest["version"];
       self.setState({
         version: version,

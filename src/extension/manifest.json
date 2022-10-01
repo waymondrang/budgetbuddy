@@ -3,7 +3,7 @@
   "name": "BudgetBuddy",
   "author": "Raymond Wang",
   "version": "1.0.0",
-  "description": "Transaction analyzer for UCSD HDH Accounts",
+  "description": "A collection and analysis tool for UCSD HDH Account transactions",
   "content_scripts": [
     {
       "matches": [
@@ -28,8 +28,7 @@
   ],
   "permissions": [
     "storage",
-    "tabs",
-    "scripting"
+    "tabs"
   ],
   "background": {
     "service_worker": "background.js"
