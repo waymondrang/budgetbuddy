@@ -9,6 +9,7 @@ A browser extension for collecting and analyzing UCSD HDH Account transactions.
 - [Installation](#installation)
 - [Usage](#usage)
 - [Analyze](#analyze)
+- [Building From Source](#building-from-source)
 
 ## Known Issues
 
@@ -41,3 +42,7 @@ After the process finishes, two options will appear. **Launch Analyzer** will op
 ## Analyze
 
 _This section is still in progress_
+
+## Building From Source
+
+If you would like to build the extension from the source code yourself, navigate to `src/analysis page` and run `npm install`. After the dependencies have installed, run `npm run build`, which will build the web app into `src/extension/build`.
