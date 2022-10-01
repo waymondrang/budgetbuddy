@@ -84,7 +84,7 @@ form_container.classList.add(["formContainer"]);
 
 var form_instructions = document.createElement("div");
 form_instructions.classList.add(["formInstructions"]);
-form_instructions.innerHTML = "Transaction analyzer for UCSD HDH Accounts.";
+form_instructions.innerText = "Transaction analyzer for UCSD HDH Accounts.";
 
 var form_title = document.createElement("h1");
 form_title.classList.add(["formIntroText"]);
